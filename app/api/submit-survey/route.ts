@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
     const participantEmail = body.participant_email
     const participantName = body.participant_name
     const answers = body.answers || body
+    const origin = request.nextUrl?.origin || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
     console.log(body)
 
@@ -111,9 +112,9 @@ export async function POST(request: NextRequest) {
           getAll() {
             return cookieStore.getAll()
           },
-          setAll(cookiesToSet) {
+          setAll(cookiesToSet: any[]) {
             try {
-              cookiesToSet.forEach(({ name, value, options }) =>
+              ;(cookiesToSet as any[]).forEach(({ name, value, options }: any) =>
                 cookieStore.set(name, value, options)
               )
             } catch (error) {
@@ -125,6 +126,22 @@ export async function POST(request: NextRequest) {
     )
 
     // Insert quiz submission with email
+    // Prevent accidental duplicate spam (same email submitted repeatedly)
+    const { data: existingSubmission } = await supabase
+      .from('quiz_submissions')
+      .select('id, submitted_at')
+      .eq('participant_email', participantEmail)
+      .order('submitted_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingSubmission?.id) {
+      return NextResponse.json(
+        { error: 'A submission with this email already exists' },
+        { status: 409 }
+      )
+    }
+
     const { data: submission, error: submissionError } = await supabase
       .from('quiz_submissions')
       .insert({
@@ -159,7 +176,7 @@ export async function POST(request: NextRequest) {
 
     // Send partial evaluation email automatically
     try {
-      await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/send-partial-evaluation-email`, {
+      await fetch(`${origin}/api/send-partial-evaluation-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
