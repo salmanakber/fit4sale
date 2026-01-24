@@ -77,9 +77,11 @@ export async function PUT(request: NextRequest) {
     if (!adminSession?.value) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+     const dataobj = await request.json();
+    const { title, description, time_estimate, additional_text } = dataobj
+      
 
-    const { title, description, time_estimate, additional_text } =
-      await request.json();
+      console.log('ssadas data',  dataobj)
 
     // Get existing settings
     const { data: existing } = await supabase
