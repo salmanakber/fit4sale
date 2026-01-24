@@ -2,38 +2,10 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { generateEvaluationEmail } from '@/lib/email-service'
+import { sendResendEmail } from '@/lib/resend'
 
 interface SendEvaluationEmailBody {
   evaluationId: string
-}
-
-async function sendEmail(to: string, subject: string, html: string) {
-  if (!process.env.RESEND_API_KEY) {
-    console.error('[v0] RESEND_API_KEY not configured')
-    return { success: false, error: 'Email service not configured' }
-  }
-
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: 'aschwanden@kmu-beratungen.ch',
-        to,
-        subject,
-        html,
-      }),
-    })
-
-    console.log('[v0] Resend API response status:', response.status)
-    return { success: response.ok }
-  } catch (error) {
-    console.error('[v0] Error sending email with Resend:', error)
-    return { success: false, error: String(error) }
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -131,12 +103,25 @@ export async function POST(request: NextRequest) {
     })
 
     // Send email
-    const emailResult = await sendEmail(patientEmail, emailTemplate.subject, emailTemplate.html)
+    const emailResult = await sendResendEmail({
+      to: patientEmail,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+    })
 
     if (!emailResult.success) {
       console.error('[v0] Failed to send email to:', patientEmail, emailResult.error)
+      await supabase.from('email_audit_logs').insert({
+        submission_id: evaluation.submission_id,
+        recipient_email: patientEmail,
+        email_type: 'full',
+        subject: emailTemplate.subject,
+        sender_email: 'aschwanden@kmu-beratungen.ch',
+        status: 'failed',
+        admin_notified: true,
+      })
       return NextResponse.json(
-        { error: 'Failed to send email' },
+        { error: emailResult.error || 'Failed to send email' },
         { status: 500 }
       )
     }

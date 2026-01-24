@@ -46,13 +46,19 @@ interface EvaluationDetail {
 export default function EvaluationDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const evaluationId = params.id as string
+  const evaluationId = (params as any)?.id as string | undefined
   const [evaluation, setEvaluation] = useState<EvaluationDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [isApproving, setIsApproving] = useState(false)
 
   useEffect(() => {
+    if (!evaluationId || evaluationId === 'undefined') {
+      setIsLoading(false)
+      router.push('/admin/evaluations')
+      return
+    }
+
     const fetchEvaluation = async () => {
       try {
         const response = await fetch(`/api/admin/evaluations/${evaluationId}`)

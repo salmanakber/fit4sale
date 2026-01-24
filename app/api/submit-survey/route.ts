@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendResendEmail } from '@/lib/resend'
 
 async function calculateEvaluation(supabase: any, submissionId: string, answers: any) {
   // Fetch benchmarks for all questions
@@ -90,7 +91,6 @@ export async function POST(request: NextRequest) {
     const participantEmail = body.participant_email
     const participantName = body.participant_name
     const answers = body.answers || body
-    const origin = request.nextUrl?.origin || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
     console.log(body)
 
@@ -174,19 +174,179 @@ export async function POST(request: NextRequest) {
     // Calculate evaluation automatically
     const evaluation = await calculateEvaluation(supabase, submissionId, answers)
 
-    // Send partial evaluation email automatically
+    // Send partial evaluation email automatically (direct Resend call + audit log)
     try {
-      await fetch(`${origin}/api/send-partial-evaluation-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submissionId,
-          participantEmail,
-          score: evaluation.totalScore,
-        }),
+      // Load cached evaluation details for richer email content (category breakdown + recommendation)
+      const { data: cached } = await supabase
+        .from('evaluation_results_cache')
+        .select('total_score, section_scores, recommendations')
+        .eq('submission_id', submissionId)
+        .single()
+
+      const totalScore = cached?.total_score ?? evaluation.totalScore
+      const byCategory = (cached?.section_scores as any)?.byCategory as
+        | Record<string, number>
+        | undefined
+      const recommendationText = cached?.recommendations as string | undefined
+
+      const categoryHtml = byCategory
+        ? `
+          <div style="margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0;">Teilbereiche</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              ${Object.entries(byCategory)
+                .map(
+                  ([cat, val]) => `
+                    <tr>
+                      <td style="padding: 8px; border-bottom: 1px solid #eee;">${cat}</td>
+                      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;"><strong>${val}/100</strong></td>
+                    </tr>
+                  `
+                )
+                .join('')}
+            </table>
+          </div>
+        `
+        : ''
+
+      const recommendationHtml = recommendationText
+        ? `<p><strong>Kurze Einschätzung:</strong> ${recommendationText}</p>`
+        : ''
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background-color: #0B1120; color: white; padding: 20px; text-align: center; border-radius: 8px; }
+              .score-card { background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
+              .score { font-size: 48px; font-weight: bold; color: #0B1120; }
+              .content { padding: 20px 0; }
+              .footer { color: #666; font-size: 12px; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Fit4Sale – Vorläufige Auswertung</h1>
+              </div>
+              <div class="content">
+                <p>Hallo${participantName ? ` ${participantName}` : ''},</p>
+                <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check. Wir haben Ihre Angaben ausgewertet und eine vorläufige Auswertung erstellt.</p>
+                
+                <div class="score-card">
+                  <p>Ihr Score:</p>
+                  <div class="score">${totalScore}/100</div>
+                </div>
+
+                ${recommendationHtml}
+                ${categoryHtml}
+
+                <p><strong>Nächste Schritte:</strong></p>
+                <p>Die vollständige Auswertung wird nach manueller Freigabe per E-Mail versendet.</p>
+                
+                <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
+                
+                <p>Freundliche Grüße<br>KMU-Beratungen</p>
+              </div>
+              <div class="footer">
+                <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `
+
+      const subject = 'Fit4Sale – Vorläufige Auswertung'
+      const emailResult = await sendResendEmail({
+        to: participantEmail,
+        subject,
+        html,
+      })
+
+      if (emailResult.success) {
+        await supabase
+          .from('quiz_submissions')
+          .update({ partial_evaluation_sent: true })
+          .eq('id', submissionId)
+      }
+
+      await supabase.from('email_audit_logs').insert({
+        submission_id: submissionId,
+        recipient_email: participantEmail,
+        email_type: 'partial',
+        subject,
+        sender_email: 'aschwanden@kmu-beratungen.ch',
+        status: emailResult.success ? 'sent' : 'failed',
+        admin_notified: true,
+      })
+
+      await supabase.from('admin_logs').insert({
+        admin_id: null,
+        action: emailResult.success
+          ? `Vorläufige Auswertung per E-Mail versendet (${participantEmail})`
+          : `Fehler beim Versand der vorläufigen Auswertung (${participantEmail})`,
+        submission_id: submissionId,
       })
     } catch (emailError) {
       console.error('[v0] Error sending partial evaluation email:', emailError)
+    }
+
+    // Send confirmation email (direct Resend call + audit log)
+    try {
+      const subject = 'Fit4Sale – Sales-Check eingereicht'
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background-color: #0B1120; color: white; padding: 20px; text-align: center; border-radius: 8px; }
+              .content { padding: 20px 0; }
+              .footer { color: #666; font-size: 12px; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Fit4Sale – Eingabe erhalten</h1>
+              </div>
+              <div class="content">
+                <p>Hallo${participantName ? ` ${participantName}` : ''},</p>
+                <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check.</p>
+                <p><strong>Ihre Eingabenummer:</strong> ${submissionId}</p>
+                <p>Sie erhalten eine <strong>vorläufige Auswertung</strong> automatisch per E-Mail. Die <strong>vollständige Auswertung</strong> wird nach manueller Freigabe versendet.</p>
+                <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
+                <p>Freundliche Grüße<br>KMU-Beratungen</p>
+              </div>
+              <div class="footer">
+                <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `
+
+      const emailResult = await sendResendEmail({
+        to: participantEmail,
+        subject,
+        html,
+      })
+
+      await supabase.from('email_audit_logs').insert({
+        submission_id: submissionId,
+        recipient_email: participantEmail,
+        email_type: 'confirmation',
+        subject,
+        sender_email: 'aschwanden@kmu-beratungen.ch',
+        status: emailResult.success ? 'sent' : 'failed',
+        admin_notified: true,
+      })
+    } catch (emailError) {
+      console.error('[v0] Error sending confirmation email:', emailError)
     }
 
     return NextResponse.json(

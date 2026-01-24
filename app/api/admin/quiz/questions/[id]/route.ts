@@ -43,7 +43,7 @@ export async function GET(
         question_type,
         order_index,
         created_at,
-        quiz_answer_options(id, option_text, value)
+        quiz_answer_options(id, option_text, option_value, order_index)
       `
       )
       .eq('id', id)
@@ -51,7 +51,16 @@ export async function GET(
 
     if (error) throw error;
 
-    return NextResponse.json(question);
+    // Backward-compatible shape for existing UI (expects option "value")
+    const normalized = {
+      ...question,
+      quiz_answer_options: (question as any).quiz_answer_options?.map((opt: any) => ({
+        ...opt,
+        value: opt.option_value,
+      })),
+    }
+
+    return NextResponse.json(normalized);
   } catch (error) {
     console.error('Error fetching question:', error);
     return NextResponse.json(
@@ -115,7 +124,8 @@ export async function PUT(
       const optionsData = options.map((opt: any, idx: number) => ({
         question_id: id,
         option_text: opt.option_text,
-        value: opt.value || `option_${idx}`,
+        option_value: opt.value || `option_${idx}`,
+        order_index: idx,
       }));
 
       const { error: optionsError } = await supabase

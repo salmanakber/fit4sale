@@ -1,35 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-
-async function sendEmail(to: string, subject: string, html: string) {
-  if (!process.env.RESEND_API_KEY) {
-    console.error('[v0] RESEND_API_KEY not configured')
-    return { success: false, error: 'Email service not configured' }
-  }
-
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: 'aschwanden@kmu-beratungen.ch',
-        to,
-        subject,
-        html,
-      }),
-    })
-
-    console.log('[v0] Resend API response status:', response.status)
-    return { success: response.ok }
-  } catch (error) {
-    console.error('[v0] Error sending email with Resend:', error)
-    return { success: false, error: String(error) }
-  }
-}
+import { sendResendEmail } from '@/lib/resend'
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,7 +18,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
         cookies: {
           getAll() {
@@ -143,18 +115,27 @@ export async function POST(request: NextRequest) {
     `
 
     // Send the email (participant)
-    const emailResult = await sendEmail(
-      participantEmail,
-      'Fit4Sale – Vorläufige Auswertung',
-      html
-    )
+    const subject = 'Fit4Sale – Vorläufige Auswertung'
+    const emailResult = await sendResendEmail({
+      to: participantEmail,
+      subject,
+      html,
+    })
 
     if (!emailResult.success) {
       console.error('[v0] Failed to send partial evaluation email:', emailResult.error)
-      return NextResponse.json(
-        { error: 'Failed to send email' },
-        { status: 500 }
-      )
+      // audit failed attempt as well (so dashboard shows it)
+      await supabase.from('email_audit_logs').insert({
+        submission_id: submissionId,
+        recipient_email: participantEmail,
+        email_type: 'partial',
+        subject,
+        sender_email: 'aschwanden@kmu-beratungen.ch',
+        status: 'failed',
+        admin_notified: true,
+      })
+
+      return NextResponse.json({ error: emailResult.error || 'Failed to send email' }, { status: 500 })
     }
 
     // Update submission status
@@ -168,7 +149,7 @@ export async function POST(request: NextRequest) {
       submission_id: submissionId,
       recipient_email: participantEmail,
       email_type: 'partial',
-      subject: 'Fit4Sale – Vorläufige Auswertung',
+      subject,
       sender_email: 'aschwanden@kmu-beratungen.ch',
       status: 'sent',
       admin_notified: true,

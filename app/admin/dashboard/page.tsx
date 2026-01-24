@@ -17,30 +17,24 @@ import { cn } from '@/lib/utils'
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
     totalSubmissions: 0,
-    pendingReviews: 0,
-    completedEvaluations: 0
+    pendingApprovals: 0,
+    totalEvaluations: 0,
+    partialEmailsSent: 0,
+    fullEmailsSent: 0,
   })
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch stats (Mocking the data fetch for design purposes)
+  // Fetch stats (real data)
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // In a real app, you would fetch from your API:
-        // const res = await fetch('/api/admin/stats')
-        // const data = await res.json()
-        
-        // Simulating API delay and response
-        setTimeout(() => {
-            setStats({
-                totalSubmissions: 24,
-                pendingReviews: 5,
-                completedEvaluations: 19
-            })
-            setIsLoading(false)
-        }, 800)
+        const res = await fetch('/api/admin/stats')
+        if (!res.ok) throw new Error('Failed to fetch stats')
+        const data = await res.json()
+        setStats(data.stats)
       } catch (error) {
         console.error('Failed to fetch stats')
+      } finally {
         setIsLoading(false)
       }
     }
@@ -103,7 +97,7 @@ export default function AdminDashboard() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold text-blue-950">Dashboard</h1>
         <p className="text-slate-500">
-          Willkommen zurück. Hier ist der aktuelle Status Ihrer Fitness-Assessments.
+          Willkommen zurück. Hier ist der aktuelle Status Ihrer Fit4Sale-Auswertungen.
         </p>
       </div>
 
@@ -116,14 +110,14 @@ export default function AdminDashboard() {
             colorClass="bg-blue-600"
         />
         <StatCard 
-            title="Offene Aufgaben" 
-            value={stats.pendingReviews} 
+            title="Offene Freigaben" 
+            value={stats.pendingApprovals} 
             icon={Clock} 
             colorClass="bg-amber-500" 
         />
         <StatCard 
-            title="Abgeschlossen" 
-            value={stats.completedEvaluations} 
+            title="Auswertungen" 
+            value={stats.totalEvaluations} 
             icon={CheckCircle2} 
             colorClass="bg-emerald-500" 
         />
@@ -147,7 +141,7 @@ export default function AdminDashboard() {
 
             <ActionCard
                 title="Auswertungen"
-                description="Erstellen Sie detaillierte Fitness-Berichte, geben Sie diese frei und versenden Sie E-Mails."
+                description="Erstellen Sie Auswertungen, geben Sie diese frei und versenden Sie E-Mails."
                 icon={BarChart3}
                 href="/admin/evaluations"
                 color="bg-emerald-600 group-hover:bg-emerald-700"
@@ -166,14 +160,14 @@ export default function AdminDashboard() {
       {/* Recent Activity Placeholder (Optional Polish) */}
       <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-700">System Status</h3>
+            <h3 className="font-semibold text-slate-700">E-Mail Versand</h3>
             <span className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full font-medium">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 System Aktiv
             </span>
           </div>
           <p className="text-sm text-slate-500">
-             Alle Systeme laufen normal. Letzte Aktualisierung: {new Date().toLocaleTimeString('de-CH')}
+             Vorläufige E-Mails gesendet: <span className="font-semibold text-slate-800">{stats.partialEmailsSent}</span> · Vollständige E-Mails gesendet: <span className="font-semibold text-slate-800">{stats.fullEmailsSent}</span>
           </p>
       </div>
 

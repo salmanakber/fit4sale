@@ -27,7 +27,7 @@ export async function GET(
           getAll() {
             return cookieStore.getAll()
           },
-          setAll(cookiesToSet) {
+          setAll(cookiesToSet: any[]) {
             try {
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, options)
@@ -40,6 +40,14 @@ export async function GET(
       }
     )
 
+    const { id } = await params
+    if (!id || id === 'undefined') {
+      return NextResponse.json(
+        { error: 'Missing evaluation id' },
+        { status: 400 }
+      )
+    }
+
     // Fetch the evaluation with related submission
     const { data: evaluation, error } = await supabase
       .from('evaluation_results')
@@ -49,7 +57,7 @@ export async function GET(
          special_modifications, evaluation_completed_at, 
          quiz_submissions(patient_name, patient_email, participant_email, full_evaluation_approved, approved_by_admin, approved_at)`
       )
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error || !evaluation) {

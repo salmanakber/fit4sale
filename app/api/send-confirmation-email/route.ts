@@ -1,38 +1,12 @@
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendResendEmail } from '@/lib/resend'
 
 interface SendEmailBody {
   customerName: string
   customerEmail: string
   submissionId: string
-}
-
-async function sendEmail(to: string, subject: string, html: string) {
-  if (!process.env.RESEND_API_KEY) {
-    console.error('[v0] RESEND_API_KEY not configured')
-    return false
-  }
-
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: 'aschwanden@kmu-beratungen.ch',
-        to,
-        subject,
-        html,
-      }),
-    })
-
-    console.log('[v0] Resend API response status:', response.status)
-    return response.ok
-  } catch (error) {
-    console.error('[v0] Error sending email with Resend:', error)
-    return false
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -82,16 +56,49 @@ export async function POST(request: NextRequest) {
     `
 
     // Send email using Resend
-    const emailSent = await sendEmail(
-      body.customerEmail,
-      'Fit4Sale – Sales-Check eingereicht',
-      html
-    )
+    const subject = 'Fit4Sale – Sales-Check eingereicht'
+    const emailResult = await sendResendEmail({
+      to: body.customerEmail,
+      subject,
+      html,
+    })
 
-    if (!emailSent) {
-      console.error('[v0] Failed to send email to:', body.customerEmail)
+    // Best-effort audit log (sent/failed)
+    try {
+      const cookieStore = await cookies()
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll()
+            },
+            setAll(cookiesToSet: any[]) {
+              cookiesToSet.forEach(({ name, value, options }: any) =>
+                cookieStore.set(name, value, options)
+              )
+            },
+          },
+        }
+      )
+
+      await supabase.from('email_audit_logs').insert({
+        submission_id: body.submissionId,
+        recipient_email: body.customerEmail,
+        email_type: 'confirmation',
+        subject,
+        sender_email: 'aschwanden@kmu-beratungen.ch',
+        status: emailResult.success ? 'sent' : 'failed',
+        admin_notified: true,
+      })
+    } catch (e) {
+      console.error('[v0] Failed to write confirmation email audit log:', e)
+    }
+
+    if (!emailResult.success) {
       return NextResponse.json(
-        { error: 'Failed to send email' },
+        { error: emailResult.error || 'Failed to send email' },
         { status: 500 }
       )
     }
