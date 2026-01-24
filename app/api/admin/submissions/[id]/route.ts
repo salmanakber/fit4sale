@@ -40,9 +40,9 @@ export async function GET(
       }
     )
 
-    // Fetch the submission
+    // Fetch the submission (quiz-based)
     const { data: submission, error } = await supabase
-      .from('survey_submissions')
+      .from('quiz_submissions')
       .select('*')
       .eq('id', params.id)
       .single()

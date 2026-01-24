@@ -39,9 +39,9 @@ export async function GET() {
 
     // Fetch all submissions
     const { data: submissions, error } = await supabase
-      .from('survey_submissions')
+      .from('quiz_submissions')
       .select(
-        'id, patient_name, patient_email, age_group, current_activity_level, health_goals, created_at'
+        'id, patient_name, patient_email, participant_email, created_at, submitted_at, partial_evaluation_sent, full_evaluation_pending, full_evaluation_approved'
       )
       .order('created_at', { ascending: false })
 

@@ -17,9 +17,13 @@ interface EvaluationDetail {
   intensity_level: string
   special_modifications: string
   evaluation_completed_at: string
-  survey_submissions: {
+  quiz_submissions: {
     patient_name: string
-    patient_email: string
+    patient_email: string | null
+    participant_email: string | null
+    full_evaluation_approved: boolean | null
+    approved_by_admin: string | null
+    approved_at: string | null
   }
 }
 
@@ -30,6 +34,7 @@ export default function EvaluationDetailPage() {
   const [evaluation, setEvaluation] = useState<EvaluationDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [isApproving, setIsApproving] = useState(false)
 
   useEffect(() => {
     const fetchEvaluation = async () => {
@@ -66,13 +71,41 @@ export default function EvaluationDetailPage() {
       if (response.ok) {
         alert('Evaluation email sent successfully')
       } else {
-        alert('Failed to send email')
+        const err = await response.json().catch(() => null)
+        alert(err?.error || 'Failed to send email')
       }
     } catch (error) {
       console.error('[v0] Error sending email:', error)
       alert('Error sending email')
     } finally {
       setIsSendingEmail(false)
+    }
+  }
+
+  const handleApprove = async () => {
+    if (!evaluation) return
+    setIsApproving(true)
+    try {
+      const res = await fetch(`/api/admin/submissions/${evaluation.submission_id}/approve`, {
+        method: 'POST',
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        alert(err?.error || 'Failed to approve')
+        return
+      }
+      // refresh evaluation so approval status updates
+      const refreshed = await fetch(`/api/admin/evaluations/${evaluationId}`)
+      if (refreshed.ok) {
+        const data = await refreshed.json()
+        setEvaluation(data.evaluation)
+      }
+      alert('Approved. You can now send the full evaluation email.')
+    } catch (e) {
+      console.error('[v0] Error approving:', e)
+      alert('Error approving')
+    } finally {
+      setIsApproving(false)
     }
   }
 
@@ -118,6 +151,8 @@ export default function EvaluationDetailPage() {
     .split(' | ')
     .filter((rec) => rec.trim().length > 0)
 
+  const isApproved = !!evaluation.quiz_submissions.full_evaluation_approved
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -128,19 +163,44 @@ export default function EvaluationDetailPage() {
             </Button>
           </Link>
           <h2 className="text-2xl font-bold text-foreground">
-            {evaluation.survey_submissions.patient_name}
+            {evaluation.quiz_submissions.patient_name}
           </h2>
         </div>
-        <Button
-          onClick={handleSendEmail}
-          disabled={isSendingEmail}
-          size="sm"
-        >
-          {isSendingEmail ? 'Sending...' : 'Send Email to Patient'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleApprove}
+            disabled={isApproving || isApproved}
+            size="sm"
+          >
+            {isApproved ? 'Approved' : isApproving ? 'Approving...' : 'Approve'}
+          </Button>
+          <Button
+            onClick={handleSendEmail}
+            disabled={isSendingEmail || !isApproved}
+            size="sm"
+            title={!isApproved ? 'Approve first to send the full evaluation email' : undefined}
+          >
+            {isSendingEmail ? 'Sending...' : 'Send Full Email'}
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-8">
+        {/* Approval Status */}
+        <div className="rounded-lg border border-border bg-card p-6">
+          <div className="text-sm font-semibold text-muted-foreground mb-2">Approval</div>
+          <div className="text-foreground">
+            {isApproved ? 'Approved' : 'Not approved yet'}
+          </div>
+          {evaluation.quiz_submissions.approved_at && (
+            <div className="text-sm text-muted-foreground mt-1">
+              Approved at:{' '}
+              {new Date(evaluation.quiz_submissions.approved_at).toLocaleString()}
+            </div>
+          )}
+        </div>
+
         {/* Scores */}
         <div className="grid gap-6 md:grid-cols-2">
           <ScoreDisplay score={evaluation.fitness_level_score} label="Fitness Level Score" />
@@ -181,8 +241,15 @@ export default function EvaluationDetailPage() {
         {/* Patient Info */}
         <div className="rounded-lg border border-border bg-card p-8">
           <h3 className="mb-4 text-lg font-semibold text-foreground">Patient Information</h3>
-          <SectionField label="Name" value={evaluation.survey_submissions.patient_name} />
-          <SectionField label="Email" value={evaluation.survey_submissions.patient_email} />
+          <SectionField label="Name" value={evaluation.quiz_submissions.patient_name} />
+          <SectionField
+            label="Email"
+            value={
+              evaluation.quiz_submissions.patient_email ||
+              evaluation.quiz_submissions.participant_email ||
+              '-'
+            }
+          />
           <SectionField
             label="Evaluation Completed"
             value={new Date(evaluation.evaluation_completed_at).toLocaleDateString('en-US', {

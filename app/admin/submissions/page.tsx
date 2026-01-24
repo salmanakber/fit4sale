@@ -8,11 +8,13 @@ import { Input } from '@/components/ui/input'
 interface Submission {
   id: string
   patient_name: string
-  patient_email: string
-  age_group: string
-  current_activity_level: string
-  health_goals: string
+  patient_email: string | null
+  participant_email: string | null
+  partial_evaluation_sent?: boolean | null
+  full_evaluation_pending?: boolean | null
+  full_evaluation_approved?: boolean | null
   created_at: string
+  submitted_at?: string | null
 }
 
 export default function SubmissionsPage() {
@@ -44,7 +46,9 @@ export default function SubmissionsPage() {
     const filtered = submissions.filter(
       (submission) =>
         submission.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        submission.patient_email.toLowerCase().includes(searchQuery.toLowerCase())
+        (submission.patient_email || submission.participant_email || '')
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase())
     )
     setFilteredSubmissions(filtered)
   }, [searchQuery, submissions])
@@ -98,10 +102,10 @@ export default function SubmissionsPage() {
                 Email
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
-                Age Group
+                Partial Email
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
-                Activity Level
+                Full Approved
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
                 Submitted
@@ -116,19 +120,19 @@ export default function SubmissionsPage() {
               filteredSubmissions.map((submission) => (
                 <tr key={submission.id} className="border-b border-border hover:bg-secondary/50">
                   <td className="px-6 py-4 text-sm text-foreground">
-                    {submission.patient_name}
+                    {submission.patient_name || '—'}
                   </td>
                   <td className="px-6 py-4 text-sm text-foreground">
-                    {submission.patient_email}
+                    {submission.patient_email || submission.participant_email || '—'}
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">
-                    {submission.age_group}
+                    {submission.partial_evaluation_sent ? 'Sent' : 'Not sent'}
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">
-                    {submission.current_activity_level || '-'}
+                    {submission.full_evaluation_approved ? 'Yes' : 'No'}
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">
-                    {formatDate(submission.created_at)}
+                    {formatDate(submission.submitted_at || submission.created_at)}
                   </td>
                   <td className="px-6 py-4 text-sm">
                     <Link

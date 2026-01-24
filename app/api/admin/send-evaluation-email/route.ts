@@ -7,12 +7,33 @@ interface SendEvaluationEmailBody {
   evaluationId: string
 }
 
-// Stub implementation - Replace with your email service
-async function sendEmail(to: string, emailData: { subject: string; html: string; text: string }) {
-  // TODO: Implement actual email sending
-  console.log('[v0] Email would be sent to:', to)
-  console.log('[v0] Subject:', emailData.subject)
-  return true
+async function sendEmail(to: string, subject: string, html: string) {
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[v0] RESEND_API_KEY not configured')
+    return { success: false, error: 'Email service not configured' }
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'aschwanden@kmu-beratungen.ch',
+        to,
+        subject,
+        html,
+      }),
+    })
+
+    console.log('[v0] Resend API response status:', response.status)
+    return { success: response.ok }
+  } catch (error) {
+    console.error('[v0] Error sending email with Resend:', error)
+    return { success: false, error: String(error) }
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -64,7 +85,7 @@ export async function POST(request: NextRequest) {
       .from('evaluation_results')
       .select(
         `id, recommended_program, intensity_level, program_duration, personalized_recommendations, 
-         special_modifications, safety_concerns, survey_submissions(patient_name, patient_email)`
+         special_modifications, safety_concerns, submission_id, quiz_submissions(patient_name, patient_email, participant_email, full_evaluation_approved)`
       )
       .eq('id', body.evaluationId)
       .single()
@@ -78,13 +99,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract data
-    const submission = evaluation.survey_submissions as any
+    const submission = evaluation.quiz_submissions as any
     const patientName = submission?.patient_name || 'Customer'
-    const patientEmail = submission?.patient_email
+    const patientEmail = submission?.patient_email || submission?.participant_email
 
     if (!patientEmail) {
       return NextResponse.json(
         { error: 'Patient email not found' },
+        { status: 400 }
+      )
+    }
+
+    if (!submission?.full_evaluation_approved) {
+      return NextResponse.json(
+        { error: 'Full evaluation is not approved yet' },
         { status: 400 }
       )
     }
@@ -103,15 +131,26 @@ export async function POST(request: NextRequest) {
     })
 
     // Send email
-    const emailSent = await sendEmail(patientEmail, emailTemplate)
+    const emailResult = await sendEmail(patientEmail, emailTemplate.subject, emailTemplate.html)
 
-    if (!emailSent) {
-      console.error('[v0] Failed to send email to:', patientEmail)
+    if (!emailResult.success) {
+      console.error('[v0] Failed to send email to:', patientEmail, emailResult.error)
       return NextResponse.json(
         { error: 'Failed to send email' },
         { status: 500 }
       )
     }
+
+    // Audit log (notification trail)
+    await supabase.from('email_audit_logs').insert({
+      submission_id: evaluation.submission_id,
+      recipient_email: patientEmail,
+      email_type: 'full',
+      subject: emailTemplate.subject,
+      sender_email: 'aschwanden@kmu-beratungen.ch',
+      status: 'sent',
+      admin_notified: true,
+    })
 
     // Log the action
     await supabase.from('admin_logs').insert({

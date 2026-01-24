@@ -66,8 +66,11 @@ npm install
    - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anon key
 
-3. **Initialize the database**:
-   - Execute `/scripts/01_create_tables.sql` in Supabase SQL editor
+3. **Initialize the database (quiz-based flow)**:
+   - Execute `/scripts/03_create_quiz_tables.sql` in Supabase SQL editor
+   - Execute `/scripts/06_create_benchmarks_and_audit.sql` (benchmarks + email audit + evaluation cache + approval fields)
+   - Execute `/scripts/07_align_quiz_submission_schema.sql` (aligns quiz submissions with the current API payload)
+   - Execute `/scripts/08_align_admin_logs_and_evaluation_results_fks.sql` (fixes foreign keys to use `quiz_submissions`)
    - Execute `/scripts/02_create_admin_user.sql` to create the first admin user
 
 4. **Run the development server**:

@@ -42,6 +42,59 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Load cached evaluation details for richer email content (category breakdown + recommendation)
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+
+    const { data: cached } = await supabase
+      .from('evaluation_results_cache')
+      .select('total_score, section_scores, recommendations')
+      .eq('submission_id', submissionId)
+      .single()
+
+    const totalScore = cached?.total_score ?? score
+    const byCategory = (cached?.section_scores as any)?.byCategory as Record<string, number> | undefined
+    const recommendationText = cached?.recommendations as string | undefined
+
+    const categoryHtml = byCategory
+      ? `
+        <div style="margin: 20px 0;">
+          <h3 style="margin: 0 0 10px 0;">Teilbereiche</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${Object.entries(byCategory)
+              .map(
+                ([cat, val]) => `
+                  <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${cat}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;"><strong>${val}/100</strong></td>
+                  </tr>
+                `
+              )
+              .join('')}
+          </table>
+        </div>
+      `
+      : ''
+
+    const recommendationHtml = recommendationText
+      ? `<p><strong>Kurze Einschätzung:</strong> ${recommendationText}</p>`
+      : ''
+
     // Generate partial evaluation email HTML
     const html = `
       <!DOCTYPE html>
@@ -68,8 +121,11 @@ export async function POST(request: NextRequest) {
               
               <div class="score-card">
                 <p>Ihre Fitnessnote:</p>
-                <div class="score">${score}/100</div>
+                <div class="score">${totalScore}/100</div>
               </div>
+
+              ${recommendationHtml}
+              ${categoryHtml}
 
               <p><strong>Nächste Schritte:</strong></p>
               <p>Ein Betreuer wird Ihre vollständige Bewertung prüfen und innerhalb von 2-3 Geschäftstagen eine detaillierte Bewertung mit personalisierten Empfehlungen senden.</p>
@@ -86,7 +142,7 @@ export async function POST(request: NextRequest) {
       </html>
     `
 
-    // Send the email
+    // Send the email (participant)
     const emailResult = await sendEmail(
       participantEmail,
       'Fit4Sale - Vorläufige Bewertung erhalten',
@@ -100,25 +156,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
-
-    // Log the email in audit trail
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
-        },
-      }
-    )
 
     // Update submission status
     await supabase
@@ -134,7 +171,14 @@ export async function POST(request: NextRequest) {
       subject: 'Fit4Sale - Vorläufige Bewertung erhalten',
       sender_email: 'aschwanden@kmu-beratungen.ch',
       status: 'sent',
-      admin_notified: false,
+      admin_notified: true,
+    })
+
+    // Admin log entry (notification trail)
+    await supabase.from('admin_logs').insert({
+      admin_id: null,
+      action: `Partial evaluation email sent to participant (${participantEmail})`,
+      submission_id: submissionId,
     })
 
     return NextResponse.json(

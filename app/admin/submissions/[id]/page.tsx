@@ -8,18 +8,15 @@ import { Button } from '@/components/ui/button'
 interface SubmissionDetail {
   id: string
   patient_name: string
-  patient_email: string
-  age_group: string
-  gender: string
-  current_activity_level: string
-  health_goals: string
-  injuries_conditions: string
-  equipment_access: string
-  time_available: string
-  fitness_experience: string
-  motivation: string
-  challenges: string
-  comments: string
+  patient_email: string | null
+  participant_email: string | null
+  answers?: any
+  submitted_at?: string | null
+  partial_evaluation_sent?: boolean | null
+  full_evaluation_pending?: boolean | null
+  full_evaluation_approved?: boolean | null
+  approved_by_admin?: string | null
+  approved_at?: string | null
   created_at: string
 }
 
@@ -29,6 +26,7 @@ export default function SubmissionDetailPage() {
   const submissionId = params.id as string
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isApproving, setIsApproving] = useState(false)
 
   useEffect(() => {
     const fetchSubmission = async () => {
@@ -85,6 +83,32 @@ export default function SubmissionDetailPage() {
     return null
   }
 
+  const participantEmail = submission.patient_email || submission.participant_email || '-'
+
+  const handleApprove = async () => {
+    setIsApproving(true)
+    try {
+      const res = await fetch(`/api/admin/submissions/${submissionId}/approve`, { method: 'POST' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        alert(err?.error || 'Failed to approve')
+        return
+      }
+      // refresh
+      const refreshed = await fetch(`/api/admin/submissions/${submissionId}`)
+      if (refreshed.ok) {
+        const data = await refreshed.json()
+        setSubmission(data.submission)
+      }
+      alert('Approved. You can now send the full evaluation email from the evaluation page.')
+    } catch (e) {
+      console.error('[v0] Error approving submission:', e)
+      alert('Error approving submission')
+    } finally {
+      setIsApproving(false)
+    }
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center gap-4">
@@ -99,58 +123,44 @@ export default function SubmissionDetailPage() {
       </div>
 
       <div className="rounded-lg border border-border bg-card p-8">
-        {/* Personal Information */}
+        {/* Status */}
         <div className="mb-8">
-          <h3 className="mb-4 text-lg font-semibold text-foreground">
-            Personal Information
-          </h3>
-          <SectionField label="Name" value={submission.patient_name} />
-          <SectionField label="Email" value={submission.patient_email} />
-          <SectionField label="Age Group" value={submission.age_group} />
-          <SectionField label="Gender" value={submission.gender} />
-          <SectionField label="Submitted" value={formatDate(submission.created_at)} />
-        </div>
-
-        {/* Fitness Background */}
-        <div className="mb-8">
-          <h3 className="mb-4 text-lg font-semibold text-foreground">
-            Fitness Background
-          </h3>
+          <h3 className="mb-4 text-lg font-semibold text-foreground">Status</h3>
           <SectionField
-            label="Current Activity Level"
-            value={submission.current_activity_level}
+            label="Partial evaluation email sent"
+            value={submission.partial_evaluation_sent ? 'Yes' : 'No'}
           />
           <SectionField
-            label="Fitness Experience"
-            value={submission.fitness_experience}
+            label="Full evaluation approved"
+            value={submission.full_evaluation_approved ? 'Yes' : 'No'}
           />
-          <SectionField label="Equipment Access" value={submission.equipment_access} />
           <SectionField
-            label="Time Available for Exercise"
-            value={submission.time_available}
+            label="Approved at"
+            value={submission.approved_at ? formatDate(submission.approved_at) : '-'}
           />
         </div>
 
-        {/* Health & Goals */}
+        {/* Participant */}
         <div className="mb-8">
           <h3 className="mb-4 text-lg font-semibold text-foreground">
-            Health & Goals
+            Participant
           </h3>
-          <SectionField label="Main Fitness Goals" value={submission.health_goals} />
+          <SectionField label="Name" value={submission.patient_name || '-'} />
+          <SectionField label="Email" value={participantEmail} />
           <SectionField
-            label="Injuries or Health Conditions"
-            value={submission.injuries_conditions}
+            label="Submitted"
+            value={formatDate(submission.submitted_at || submission.created_at)}
           />
-          <SectionField label="Motivation" value={submission.motivation} />
-          <SectionField label="Challenges" value={submission.challenges} />
         </div>
 
-        {/* Additional Information */}
+        {/* Answers */}
         <div className="mb-8">
           <h3 className="mb-4 text-lg font-semibold text-foreground">
-            Additional Information
+            Answers (raw)
           </h3>
-          <SectionField label="Comments" value={submission.comments} />
+          <pre className="whitespace-pre-wrap break-words rounded-md border border-border bg-muted p-4 text-sm text-foreground">
+            {JSON.stringify(submission.answers || {}, null, 2)}
+          </pre>
         </div>
 
         {/* Actions */}
@@ -158,8 +168,17 @@ export default function SubmissionDetailPage() {
           <Link href={`/admin/evaluations/create?submission=${submission.id}`}>
             <Button size="sm">Create Evaluation</Button>
           </Link>
-          <Button variant="outline" size="sm">
-            Send Email
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isApproving || !!submission.full_evaluation_approved}
+            onClick={handleApprove}
+          >
+            {submission.full_evaluation_approved
+              ? 'Approved'
+              : isApproving
+                ? 'Approving...'
+                : 'Approve Full Evaluation'}
           </Button>
         </div>
       </div>

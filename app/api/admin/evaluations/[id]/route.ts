@@ -47,7 +47,7 @@ export async function GET(
         `id, submission_id, fitness_level_score, readiness_score, recommended_program, 
          safety_concerns, personalized_recommendations, program_duration, intensity_level, 
          special_modifications, evaluation_completed_at, 
-         survey_submissions(patient_name, patient_email)`
+         quiz_submissions(patient_name, patient_email, participant_email, full_evaluation_approved, approved_by_admin, approved_at)`
       )
       .eq('id', params.id)
       .single()

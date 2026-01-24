@@ -6,11 +6,12 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
   // Fetch benchmarks for all questions
   const { data: benchmarks } = await supabase
     .from('benchmarks')
-    .select('question_id, answer_value, score')
+    .select('question_id, answer_value, score, category')
 
   // Calculate total score based on answers and benchmarks
   let totalScore = 0
-  const sectionScores: Record<string, number> = {}
+  const questionScores: Record<string, number> = {}
+  const categoryScores: Record<string, { total: number; count: number }> = {}
 
   for (const [questionId, answer] of Object.entries(answers)) {
     if (questionId === 'participant_email') continue
@@ -30,17 +31,29 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
 
       const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
       totalScore += avgScore
-      sectionScores[questionId] = avgScore
+      questionScores[questionId] = avgScore
     } else {
       // Single answer
       const benchmark = relevantBenchmarks.find((b: any) => b.answer_value === answer)
       const score = benchmark?.score || 0
       totalScore += score
-      sectionScores[questionId] = score
+      questionScores[questionId] = score
+    }
+
+    // Category/section rollup (optional; depends on benchmarks having a category)
+    const category = relevantBenchmarks.find((b: any) => b?.category)?.category
+    if (category) {
+      if (!categoryScores[category]) categoryScores[category] = { total: 0, count: 0 }
+      categoryScores[category].total += questionScores[questionId] || 0
+      categoryScores[category].count += 1
     }
   }
 
-  const finalScore = Math.round(totalScore / Object.keys(sectionScores).length) || 0
+  const finalScore = Math.round(totalScore / Object.keys(questionScores).length) || 0
+  const categoryAverages: Record<string, number> = {}
+  for (const [cat, agg] of Object.entries(categoryScores)) {
+    categoryAverages[cat] = agg.count ? Math.round(agg.total / agg.count) : 0
+  }
 
   // Store evaluation results in cache
   const { error: cacheError } = await supabase
@@ -48,7 +61,7 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
     .upsert({
       submission_id: submissionId,
       total_score: finalScore,
-      section_scores: sectionScores,
+      section_scores: { byQuestion: questionScores, byCategory: categoryAverages },
       recommendations: generateRecommendations(finalScore),
     })
 
@@ -56,7 +69,7 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
     console.error('[v0] Error caching evaluation:', cacheError)
   }
 
-  return { totalScore: finalScore, sectionScores }
+  return { totalScore: finalScore, questionScores, categoryScores: categoryAverages }
 }
 
 function generateRecommendations(score: number): string {
@@ -75,6 +88,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const participantEmail = body.participant_email
+    const participantName = body.participant_name
     const answers = body.answers || body
 
     // Validate required fields
@@ -112,6 +126,8 @@ export async function POST(request: NextRequest) {
     const { data: submission, error: submissionError } = await supabase
       .from('quiz_submissions')
       .insert({
+        patient_name: participantName || null,
+        patient_email: participantEmail,
         participant_email: participantEmail,
         answers: answers,
         submitted_at: new Date().toISOString(),

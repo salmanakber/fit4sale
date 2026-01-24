@@ -41,7 +41,7 @@ export async function GET() {
     const { data: evaluations, error } = await supabase
       .from('evaluation_results')
       .select(
-        `id, submission_id, recommended_program, fitness_level_score, readiness_score, evaluation_completed_at, created_at, survey_submissions(patient_name)`
+        `id, submission_id, recommended_program, fitness_level_score, readiness_score, evaluation_completed_at, created_at, quiz_submissions(patient_name)`
       )
       .order('created_at', { ascending: false })
 
@@ -56,7 +56,7 @@ export async function GET() {
     // Map the data to include patient_name
     const mappedEvaluations = evaluations?.map((evaluation: any) => ({
       ...evaluation,
-      patient_name: evaluation.survey_submissions?.patient_name || 'Unknown',
+      patient_name: evaluation.quiz_submissions?.patient_name || 'Unknown',
     })) || []
 
     return NextResponse.json(
