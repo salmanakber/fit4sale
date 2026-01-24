@@ -1,35 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-
-async function sendEmail(to: string, subject: string, html: string) {
-  if (!process.env.RESEND_API_KEY) {
-    console.error('[v0] RESEND_API_KEY not configured')
-    return { success: false, error: 'Email service not configured' }
-  }
-
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: 'aschwanden@kmu-beratungen.ch',
-        to,
-        subject,
-        html,
-      }),
-    })
-
-    console.log('[v0] Resend API response status:', response.status)
-    return { success: response.ok }
-  } catch (error) {
-    console.error('[v0] Error sending email with Resend:', error)
-    return { success: false, error: String(error) }
-  }
-}
+import { sendResendEmail } from '@/lib/resend'
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,7 +18,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
         cookies: {
           getAll() {
@@ -67,9 +39,26 @@ export async function POST(request: NextRequest) {
       .eq('submission_id', submissionId)
       .single()
 
+    // Fetch submission to get user info for proper greeting
+    const { data: submissionData } = await supabase
+      .from('quiz_submissions')
+      .select('title, first_name, last_name')
+      .eq('id', submissionId)
+      .single()
+
     const totalScore = cached?.total_score ?? score
     const byCategory = (cached?.section_scores as any)?.byCategory as Record<string, number> | undefined
     const recommendationText = cached?.recommendations as string | undefined
+
+    // Generate proper German greeting
+    const title = submissionData?.title || null
+    const firstName = submissionData?.first_name || null
+    const lastName = submissionData?.last_name || null
+    const greeting = title && lastName
+      ? `Sehr ${title === 'Herr' ? 'geehrter' : 'geehrte'} ${lastName}`
+      : firstName
+        ? `Hallo ${firstName}`
+        : 'Hallo'
 
     const categoryHtml = byCategory
       ? `
@@ -95,7 +84,7 @@ export async function POST(request: NextRequest) {
       ? `<p><strong>Kurze Einschätzung:</strong> ${recommendationText}</p>`
       : ''
 
-    // Generate partial evaluation email HTML
+    // Generate partial report email HTML
     const html = `
       <!DOCTYPE html>
       <html>
@@ -113,14 +102,14 @@ export async function POST(request: NextRequest) {
         <body>
           <div class="container">
             <div class="header">
-              <h1>Fit4Sale - Vorläufige Bewertung</h1>
+              <h1>Fit4Sale – Vorläufige Auswertung</h1>
             </div>
             <div class="content">
-              <p>Hallo,</p>
-              <p>vielen Dank für die Teilnahme an unserer Fit4Sale-Bewertung. Wir haben Ihre Antworten analysiert und berechnet eine vorläufige Bewertung.</p>
+              <p>${greeting},</p>
+              <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check. Wir haben Ihre Angaben ausgewertet und eine vorläufige Auswertung erstellt.</p>
               
               <div class="score-card">
-                <p>Ihre Fitnessnote:</p>
+                <p>Ihr Score:</p>
                 <div class="score">${totalScore}/100</div>
               </div>
 
@@ -128,11 +117,11 @@ export async function POST(request: NextRequest) {
               ${categoryHtml}
 
               <p><strong>Nächste Schritte:</strong></p>
-              <p>Ein Betreuer wird Ihre vollständige Bewertung prüfen und innerhalb von 2-3 Geschäftstagen eine detaillierte Bewertung mit personalisierten Empfehlungen senden.</p>
+              <p>Die vollständige Auswertung wird nach manueller Freigabe per E-Mail versendet.</p>
               
-              <p>Falls Sie Fragen haben, kontaktieren Sie uns bitte unter aschwanden@kmu-beratungen.ch</p>
+              <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
               
-              <p>Mit freundlichen Grüßen,<br>Das Fit4Sale-Team</p>
+              <p>Freundliche Grüße<br>KMU-Beratungen</p>
             </div>
             <div class="footer">
               <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
@@ -143,18 +132,27 @@ export async function POST(request: NextRequest) {
     `
 
     // Send the email (participant)
-    const emailResult = await sendEmail(
-      participantEmail,
-      'Fit4Sale - Vorläufige Bewertung erhalten',
-      html
-    )
+    const subject = 'Fit4Sale – Vorläufige Auswertung'
+    const emailResult = await sendResendEmail({
+      to: participantEmail,
+      subject,
+      html,
+    })
 
     if (!emailResult.success) {
       console.error('[v0] Failed to send partial evaluation email:', emailResult.error)
-      return NextResponse.json(
-        { error: 'Failed to send email' },
-        { status: 500 }
-      )
+      // audit failed attempt as well (so dashboard shows it)
+      await supabase.from('email_audit_logs').insert({
+        submission_id: submissionId,
+        recipient_email: participantEmail,
+        email_type: 'partial',
+        subject,
+        sender_email: 'aschwanden@kmu-beratungen.ch',
+        status: 'failed',
+        admin_notified: true,
+      })
+
+      return NextResponse.json({ error: emailResult.error || 'Failed to send email' }, { status: 500 })
     }
 
     // Update submission status
@@ -168,7 +166,7 @@ export async function POST(request: NextRequest) {
       submission_id: submissionId,
       recipient_email: participantEmail,
       email_type: 'partial',
-      subject: 'Fit4Sale - Vorläufige Bewertung erhalten',
+      subject,
       sender_email: 'aschwanden@kmu-beratungen.ch',
       status: 'sent',
       admin_notified: true,
@@ -177,7 +175,7 @@ export async function POST(request: NextRequest) {
     // Admin log entry (notification trail)
     await supabase.from('admin_logs').insert({
       admin_id: null,
-      action: `Partial evaluation email sent to participant (${participantEmail})`,
+      action: `Vorläufige Auswertung per E-Mail versendet (${participantEmail})`,
       submission_id: submissionId,
     })
 

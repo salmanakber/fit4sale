@@ -35,10 +35,10 @@ export async function GET() {
     // Return default if not set
     if (!data) {
       return NextResponse.json({
-        title: 'Fit4Sale Fitness Assessment',
-        description: 'Get personalized fitness recommendations based on your current fitness level and goals.',
+        title: 'Fit4Sale Sales-Check',
+        description: 'Beantworten Sie ein paar Fragen zu Ihrem Vertrieb – Sie erhalten eine vorläufige Auswertung per E-Mail.',
         estimated_time: '8-10 minutes',
-        button_text: 'Start Assessment',
+        button_text: 'Start',
       });
     }
 
@@ -78,7 +78,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { title, description, time_estimate, additional_text } =
+    const { title, description, estimated_time, button_text } =
       await request.json();
 
     // Get existing settings
@@ -95,8 +95,8 @@ export async function PUT(request: NextRequest) {
         .update({
           title,
           description,
-          time_estimate,
-          additional_text,
+          estimated_time,
+          button_text,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existing.id)
@@ -109,8 +109,8 @@ export async function PUT(request: NextRequest) {
         .insert({
           title,
           description,
-          time_estimate,
-          additional_text,
+          estimated_time,
+          button_text,
         })
         .select()
         .single();
@@ -124,7 +124,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Error updating intro settings:', error);
     return NextResponse.json(
-      { error: 'Failed to update intro settings' },
+      { error: 'Failed to update intro settings.  ' },
       { status: 500 }
     );
   }

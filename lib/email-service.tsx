@@ -11,6 +11,7 @@ export interface SubmissionConfirmationData {
 }
 
 export interface EvaluationEmailData {
+  greeting?: string // Optional: if provided, use this instead of patientName
   patientName: string
   patientEmail: string
   recommendedProgram: string
@@ -25,23 +26,22 @@ export function generateSubmissionConfirmationEmail(
   data: SubmissionConfirmationData
 ): EmailTemplate {
   const text = `
-Hello ${data.patientName},
+Hallo ${data.patientName},
 
-Thank you for completing your Fit4Sale fitness evaluation survey!
+vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check.
 
-We have received your submission and our team of fitness experts is reviewing your responses. 
+Wir haben Ihre Angaben erhalten.
 
-What happens next?
-- Our team will carefully analyze your fitness background, goals, and health information
-- We will create a personalized fitness program tailored to your needs
-- You will receive your evaluation and recommendations within 2-3 business days via email
+Wie geht es weiter?
+- Wir erstellen automatisch eine **vorläufige Auswertung** auf Basis definierter Benchmarks
+- Die **vollständige Auswertung** wird nach **manueller Freigabe** versendet
 
-Your Submission ID: ${data.submissionId}
+Ihre Eingabenummer: ${data.submissionId}
 
-If you have any questions in the meantime, please don't hesitate to contact us.
+Bei Fragen erreichen Sie uns unter aschwanden@kmu-beratungen.ch
 
-Best regards,
-The Fit4Sale Team
+Freundliche Grüße
+KMU-Beratungen
   `.trim()
 
   const html = `
@@ -61,30 +61,29 @@ The Fit4Sale Team
   <div class="container">
     <div class="header">
       <h1>Fit4Sale</h1>
-      <p>Your Fitness Evaluation Submitted Successfully</p>
+      <p>Sales-Check erfolgreich eingereicht</p>
     </div>
     
     <div class="content">
-      <p>Hello <strong>${data.patientName}</strong>,</p>
+      <p>Hallo <strong>${data.patientName}</strong>,</p>
       
-      <p>Thank you for completing your Fit4Sale fitness evaluation survey!</p>
+      <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check.</p>
       
-      <p>We have received your submission and our team of fitness experts is reviewing your responses.</p>
+      <p>Wir haben Ihre Angaben erhalten.</p>
       
-      <h3>What happens next?</h3>
+      <h3>Wie geht es weiter?</h3>
       <ul>
-        <li>Our team will carefully analyze your fitness background, goals, and health information</li>
-        <li>We will create a personalized fitness program tailored to your needs</li>
-        <li>You will receive your evaluation and recommendations within 2-3 business days via email</li>
+        <li>Wir erstellen automatisch eine <strong>vorläufige Auswertung</strong> anhand definierter Benchmarks</li>
+        <li>Die <strong>vollständige Auswertung</strong> wird nach <strong>manueller Freigabe</strong> versendet</li>
       </ul>
       
       <div class="highlight">
-        <p><strong>Your Submission ID:</strong> ${data.submissionId}</p>
+        <p><strong>Ihre Eingabenummer:</strong> ${data.submissionId}</p>
       </div>
       
-      <p>If you have any questions in the meantime, please don't hesitate to contact us.</p>
+      <p>Bei Fragen erreichen Sie uns unter aschwanden@kmu-beratungen.ch</p>
       
-      <p>Best regards,<br>The Fit4Sale Team</p>
+      <p>Freundliche Grüße<br>KMU-Beratungen</p>
     </div>
     
     <div class="footer">
@@ -96,7 +95,7 @@ The Fit4Sale Team
   `.trim()
 
   return {
-    subject: 'Your Fit4Sale Fitness Evaluation Has Been Submitted',
+    subject: 'Fit4Sale – Sales-Check eingereicht',
     html,
     text,
   }
@@ -110,29 +109,30 @@ export function generateEvaluationEmail(
     .map((rec) => `<li>${rec}</li>`)
     .join('')
 
+  const greeting = data.greeting || `Hallo ${data.patientName}`
+  
   const text = `
-Hello ${data.patientName},
+${greeting},
 
-Your Fit4Sale fitness evaluation is complete! Here are your personalized recommendations:
+Ihre Fit4Sale-Auswertung ist bereit (freigegeben). Hier sind Ihre Ergebnisse:
 
-Recommended Program: ${data.recommendedProgram}
-Intensity Level: ${data.intensityLevel}
-Program Duration: ${data.programDuration}
+Zusammenfassung: ${data.recommendedProgram}
+Kategorie: ${data.intensityLevel}
+Zeithorizont: ${data.programDuration}
 
-Special Modifications: ${data.specialModifications || 'None'}
-Safety Concerns: ${data.safetyConcerns || 'None'}
+Notizen: ${data.specialModifications || '—'}
+Risiken / Blocker: ${data.safetyConcerns || '—'}
 
-Personalized Recommendations:
+Empfehlungen:
 ${data.personalizedRecommendations}
 
-Next Steps:
-1. Review the recommendations above
-2. Start your fitness program at the recommended intensity
-3. Follow the personalized recommendations for best results
-4. Reach out to us if you have any questions
+Nächste Schritte:
+1. Priorisieren Sie 1–2 Hebel mit dem größten Effekt
+2. Setzen Sie die Empfehlungen um und messen Sie die Wirkung
+3. Bei Rückfragen: aschwanden@kmu-beratungen.ch
 
-Best regards,
-The Fit4Sale Team
+Freundliche Grüße
+KMU-Beratungen
   `.trim()
 
   const html = `
@@ -155,43 +155,42 @@ The Fit4Sale Team
   <div class="container">
     <div class="header">
       <h1>Fit4Sale</h1>
-      <p>Your Fitness Evaluation Results</p>
+      <p>Ihre Auswertung</p>
     </div>
     
     <div class="content">
-      <p>Hello <strong>${data.patientName}</strong>,</p>
+      <p>${data.greeting || `Hallo <strong>${data.patientName}</strong>`},</p>
       
-      <p>Your Fit4Sale fitness evaluation is complete! Here are your personalized recommendations:</p>
+      <p>Ihre Fit4Sale-Auswertung ist bereit (freigegeben). Hier sind Ihre Ergebnisse:</p>
       
       <div class="info-box">
-        <div class="section-title">Your Program</div>
-        <p><strong>Recommended Program:</strong> ${data.recommendedProgram}</p>
-        <p><strong>Intensity Level:</strong> ${data.intensityLevel}</p>
-        <p><strong>Duration:</strong> ${data.programDuration}</p>
+        <div class="section-title">Zusammenfassung</div>
+        <p><strong>Zusammenfassung:</strong> ${data.recommendedProgram}</p>
+        <p><strong>Kategorie:</strong> ${data.intensityLevel}</p>
+        <p><strong>Zeithorizont:</strong> ${data.programDuration}</p>
       </div>
       
       <div class="section">
-        <div class="section-title">Important Notes</div>
-        ${data.specialModifications ? `<p><strong>Special Modifications:</strong> ${data.specialModifications}</p>` : ''}
-        ${data.safetyConcerns ? `<p><strong>Safety Considerations:</strong> ${data.safetyConcerns}</p>` : ''}
+        <div class="section-title">Notizen</div>
+        ${data.specialModifications ? `<p><strong>Notizen:</strong> ${data.specialModifications}</p>` : ''}
+        ${data.safetyConcerns ? `<p><strong>Risiken / Blocker:</strong> ${data.safetyConcerns}</p>` : ''}
       </div>
       
       <div class="recommendations">
-        <div class="section-title">Your Personalized Recommendations</div>
+        <div class="section-title">Empfehlungen</div>
         <ul>${recommendationsList}</ul>
       </div>
       
       <div class="section">
-        <div class="section-title">Next Steps</div>
+        <div class="section-title">Nächste Schritte</div>
         <ol>
-          <li>Review the recommendations above</li>
-          <li>Start your fitness program at the recommended intensity</li>
-          <li>Follow the personalized recommendations for best results</li>
-          <li>Reach out to us if you have any questions</li>
+          <li>Priorisieren Sie 1–2 Hebel mit dem größten Effekt</li>
+          <li>Setzen Sie die Empfehlungen um und messen Sie die Wirkung</li>
+          <li>Bei Rückfragen: aschwanden@kmu-beratungen.ch</li>
         </ol>
       </div>
       
-      <p>Best regards,<br>The Fit4Sale Team</p>
+      <p>Freundliche Grüße<br>KMU-Beratungen</p>
     </div>
     
     <div class="footer">
@@ -203,7 +202,7 @@ The Fit4Sale Team
   `.trim()
 
   return {
-    subject: 'Your Fit4Sale Fitness Evaluation Results',
+    subject: 'Fit4Sale – Vollständige Auswertung (freigegeben)',
     html,
     text,
   }

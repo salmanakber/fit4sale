@@ -47,11 +47,11 @@ export async function GET() {
 
     return NextResponse.json({
       intro: intro || {
-        title: 'Fit4Sale Fitness Assessment',
+        title: 'Fit4Sale Sales-Check',
         description:
-          'Get personalized fitness recommendations based on your current fitness level and goals.',
+          'Beantworten Sie ein paar Fragen zu Ihrem Vertrieb – Sie erhalten eine vorläufige Auswertung per E-Mail.',
         estimated_time: '8-10 minutes',
-        button_text: 'Start Assessment',
+        button_text: 'Start',
       },
       questions: questions || [],
     });

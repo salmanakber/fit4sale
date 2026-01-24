@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -33,30 +33,19 @@ export async function POST(
       }
     )
 
-    const { error: updateError } = await supabase
-      .from('quiz_submissions')
-      .update({
-        full_evaluation_pending: false,
-        full_evaluation_approved: true,
-        approved_by_admin: adminSession.value,
-        approved_at: new Date().toISOString(),
-      })
-      .eq('id', id)
+    const { data, error } = await supabase
+      .from('evaluation_results_cache')
+      .select('total_score, section_scores, recommendations, updated_at')
+      .eq('submission_id', id)
+      .single()
 
-    if (updateError) {
-      console.error('[v0] Database error:', updateError)
-      return NextResponse.json({ error: 'Failed to approve' }, { status: 500 })
+    if (error || !data) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    await supabase.from('admin_logs').insert({
-      admin_id: adminSession.value,
-      action: 'Vollständige Auswertung freigegeben',
-      submission_id: id,
-    })
-
-    return NextResponse.json({ success: true }, { status: 200 })
+    return NextResponse.json({ cache: data }, { status: 200 })
   } catch (error) {
-    console.error('[v0] Error approving submission:', error)
+    console.error('[v0] Error fetching evaluation cache:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

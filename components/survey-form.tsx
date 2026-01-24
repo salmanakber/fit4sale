@@ -1,19 +1,14 @@
-'use client'
+'use client';
 
-import React from "react"
-
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSeparator,
   FieldSet,
 } from '@/components/ui/field'
 import {
@@ -23,6 +18,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { 
+  User, 
+  Dumbbell, 
+  HeartPulse, 
+  MessageSquare, 
+  CheckCircle2, 
+  Send,
+  RotateCcw,
+  Loader2,
+  Calendar
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface SurveyFormData {
   patientName: string
@@ -65,17 +72,17 @@ export function SurveyForm() {
     const newErrors: Partial<SurveyFormData> = {}
 
     if (!formData.patientName.trim()) {
-      newErrors.patientName = 'Name is required'
+      newErrors.patientName = 'Name ist erforderlich'
     }
 
     if (!formData.patientEmail.trim()) {
-      newErrors.patientEmail = 'Email is required'
+      newErrors.patientEmail = 'Email ist erforderlich'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.patientEmail)) {
-      newErrors.patientEmail = 'Please enter a valid email'
+      newErrors.patientEmail = 'Bitte eine gültige Email eingeben'
     }
 
     if (!formData.ageGroup) {
-      newErrors.ageGroup = 'Age group is required'
+      newErrors.ageGroup = 'Altersgruppe ist erforderlich'
     }
 
     setErrors(newErrors)
@@ -93,6 +100,8 @@ export function SurveyForm() {
     e.preventDefault()
 
     if (!validateForm()) {
+      // Scroll to top if errors exist
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
 
@@ -107,20 +116,21 @@ export function SurveyForm() {
 
       if (response.ok) {
         setSubmitted(true)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
         setFormData({
-          patientName: '',
-          patientEmail: '',
-          ageGroup: '',
-          gender: '',
-          currentActivityLevel: '',
-          healthGoals: '',
-          injuriesConditions: '',
-          equipmentAccess: '',
-          timeAvailable: '',
-          fitnessExperience: '',
-          motivation: '',
-          challenges: '',
-          comments: '',
+            patientName: '',
+            patientEmail: '',
+            ageGroup: '',
+            gender: '',
+            currentActivityLevel: '',
+            healthGoals: '',
+            injuriesConditions: '',
+            equipmentAccess: '',
+            timeAvailable: '',
+            fitnessExperience: '',
+            motivation: '',
+            challenges: '',
+            comments: '',
         })
       }
     } catch (error) {
@@ -130,287 +140,345 @@ export function SurveyForm() {
     }
   }
 
+  // Helper for Section Headers
+  const FormSectionHeader = ({ icon: Icon, title, description }: any) => (
+    <div className="mb-6 border-b border-slate-100 pb-4">
+        <div className="flex items-center gap-3 mb-1">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-900">
+                <Icon className="h-5 w-5" />
+            </div>
+            <h3 className="text-lg font-bold text-blue-950 uppercase tracking-wide">{title}</h3>
+        </div>
+        {description && <p className="text-sm text-slate-500 ml-11">{description}</p>}
+    </div>
+  )
+
   if (submitted) {
     return (
-      <div className="mx-auto max-w-2xl rounded-lg border border-border bg-card p-8 text-center">
-        <h2 className="mb-2 text-2xl font-bold text-primary">Thank you!</h2>
-        <p className="mb-4 text-foreground">
-          Your fitness evaluation has been submitted successfully. Our team will review your
-          responses and send you personalized recommendations within 2-3 business days.
-        </p>
-        <Button onClick={() => setSubmitted(false)}>Submit Another Response</Button>
+      <div className="mx-auto max-w-2xl mt-12 px-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xl shadow-blue-900/5">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <CheckCircle2 className="h-10 w-10" />
+          </div>
+          <h2 className="mb-3 text-3xl font-bold text-blue-950">Vielen Dank!</h2>
+          <p className="mb-8 text-lg text-slate-600 leading-relaxed">
+            Ihre Fitness-Evaluation wurde erfolgreich übermittelt. <br/>
+            Unser Expertenteam wird Ihre Antworten analysieren und Ihnen in Kürze einen persönlichen Plan zusenden.
+          </p>
+          <Button 
+            onClick={() => setSubmitted(false)} 
+            className="bg-blue-900 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20"
+          >
+            Neue Eingabe starten
+          </Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
-      <div className="rounded-lg border border-border bg-card p-8">
-        <FieldSet>
-          <FieldLegend className="text-3xl">Fitness Evaluation Survey</FieldLegend>
-          <FieldDescription className="text-base">
-            Help us understand your fitness background and goals so we can provide personalized
-            recommendations tailored to your needs.
-          </FieldDescription>
+    <div className="min-h-screen bg-slate-50 py-12 px-4">
+        <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
+        
+        {/* Header Card */}
+        <div className="overflow-hidden rounded-t-2xl bg-blue-950 text-white shadow-lg">
+            <div className="p-8 md:p-10">
+                <div className="flex items-start justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Fitness Evaluation</h1>
+                        <p className="mt-2 text-blue-200 text-lg">
+                            Persönliche Anamnese & Zielsetzung
+                        </p>
+                    </div>
+                    {/* Optional: Add Logo Here */}
+                    <div className="hidden md:block opacity-20">
+                        <Dumbbell className="h-16 w-16" />
+                    </div>
+                </div>
+            </div>
+            <div className="bg-blue-900/50 px-8 py-3 text-xs font-medium uppercase tracking-wider text-blue-200 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Formular ID: FIT-{new Date().getFullYear()}
+            </div>
+        </div>
 
-          <FieldSeparator />
-
-          {/* Personal Information */}
-          <FieldSet>
-            <FieldLegend variant="label" className="text-xl">
-              Personal Information
-            </FieldLegend>
-            <FieldGroup className="gap-4">
-              <Field>
-                <FieldLabel htmlFor="name">Full Name *</FieldLabel>
-                <Input
-                  id="name"
-                  value={formData.patientName}
-                  onChange={(e) => handleChange('patientName', e.target.value)}
-                  placeholder="John Doe"
+        {/* Form Body */}
+        <div className="rounded-b-2xl border-x border-b border-slate-200 bg-white p-8 md:p-10 shadow-xl shadow-slate-200/50 space-y-10">
+            
+            {/* Personal Information */}
+            <section>
+                <FormSectionHeader 
+                    icon={User} 
+                    title="Persönliche Daten" 
+                    description="Basisinformationen für Ihre Akte."
                 />
-                {errors.patientName && <FieldError>{errors.patientName}</FieldError>}
-              </Field>
+                <FieldGroup className="grid gap-6 md:grid-cols-2">
+                    <Field className="md:col-span-1">
+                        <FieldLabel htmlFor="name" className="text-blue-950 font-semibold">Vollständiger Name *</FieldLabel>
+                        <Input
+                            id="name"
+                            value={formData.patientName}
+                            onChange={(e) => handleChange('patientName', e.target.value)}
+                            placeholder="Max Mustermann"
+                            className={cn("bg-slate-50 border-slate-200 focus:border-blue-500", errors.patientName && "border-red-500")}
+                        />
+                        {errors.patientName && <FieldError className="text-red-500">{errors.patientName}</FieldError>}
+                    </Field>
 
-              <Field>
-                <FieldLabel htmlFor="email">Email Address *</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.patientEmail}
-                  onChange={(e) => handleChange('patientEmail', e.target.value)}
-                  placeholder="john@example.com"
+                    <Field className="md:col-span-1">
+                        <FieldLabel htmlFor="email" className="text-blue-950 font-semibold">E-Mail Adresse *</FieldLabel>
+                        <Input
+                            id="email"
+                            type="email"
+                            value={formData.patientEmail}
+                            onChange={(e) => handleChange('patientEmail', e.target.value)}
+                            placeholder="max@beispiel.de"
+                            className={cn("bg-slate-50 border-slate-200 focus:border-blue-500", errors.patientEmail && "border-red-500")}
+                        />
+                        {errors.patientEmail && <FieldError className="text-red-500">{errors.patientEmail}</FieldError>}
+                    </Field>
+
+                    <Field className="md:col-span-1">
+                        <FieldLabel htmlFor="age" className="text-blue-950 font-semibold">Altersgruppe *</FieldLabel>
+                        <Select value={formData.ageGroup} onValueChange={(val) => handleChange('ageGroup', val)}>
+                            <SelectTrigger id="age" className={cn("bg-slate-50 border-slate-200", errors.ageGroup && "border-red-500")}>
+                            <SelectValue placeholder="Bitte wählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="18-25">18-25 Jahre</SelectItem>
+                            <SelectItem value="26-35">26-35 Jahre</SelectItem>
+                            <SelectItem value="36-45">36-45 Jahre</SelectItem>
+                            <SelectItem value="46-55">46-55 Jahre</SelectItem>
+                            <SelectItem value="56-65">56-65 Jahre</SelectItem>
+                            <SelectItem value="65+">65+ Jahre</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {errors.ageGroup && <FieldError className="text-red-500">{errors.ageGroup}</FieldError>}
+                    </Field>
+
+                    <Field className="md:col-span-1">
+                        <FieldLabel htmlFor="gender" className="text-blue-950 font-semibold">Geschlecht</FieldLabel>
+                        <Select value={formData.gender} onValueChange={(val) => handleChange('gender', val)}>
+                            <SelectTrigger id="gender" className="bg-slate-50 border-slate-200">
+                            <SelectValue placeholder="Bitte wählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="male">Männlich</SelectItem>
+                            <SelectItem value="female">Weiblich</SelectItem>
+                            <SelectItem value="other">Divers</SelectItem>
+                            <SelectItem value="prefer-not">Keine Angabe</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                </FieldGroup>
+            </section>
+
+            {/* Fitness Background */}
+            <section>
+                <FormSectionHeader 
+                    icon={Dumbbell} 
+                    title="Fitness Hintergrund" 
+                    description="Helfen Sie uns, Ihr aktuelles Leistungsniveau einzuschätzen."
                 />
-                {errors.patientEmail && <FieldError>{errors.patientEmail}</FieldError>}
-              </Field>
+                <FieldGroup className="grid gap-6 md:grid-cols-2">
+                    <Field>
+                        <FieldLabel htmlFor="activity" className="text-blue-950 font-semibold">Aktuelles Aktivitätslevel</FieldLabel>
+                        <Select
+                            value={formData.currentActivityLevel}
+                            onValueChange={(val) => handleChange('currentActivityLevel', val)}
+                        >
+                            <SelectTrigger id="activity" className="bg-slate-50 border-slate-200">
+                                <SelectValue placeholder="Bitte wählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="sedentary">Inaktiv (Kein Sport)</SelectItem>
+                                <SelectItem value="light">Leicht (1-3 Tage/Woche)</SelectItem>
+                                <SelectItem value="moderate">Moderat (3-5 Tage/Woche)</SelectItem>
+                                <SelectItem value="active">Aktiv (6-7 Tage/Woche)</SelectItem>
+                                <SelectItem value="very-active">Sehr Aktiv (Leistungssport)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
 
-              <div className="grid gap-4 md:grid-cols-2">
+                    <Field>
+                        <FieldLabel htmlFor="experience" className="text-blue-950 font-semibold">Trainingserfahrung</FieldLabel>
+                        <Select
+                            value={formData.fitnessExperience}
+                            onValueChange={(val) => handleChange('fitnessExperience', val)}
+                        >
+                            <SelectTrigger id="experience" className="bg-slate-50 border-slate-200">
+                                <SelectValue placeholder="Bitte wählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="beginner">Anfänger (Neu)</SelectItem>
+                                <SelectItem value="intermediate">Fortgeschritten (1-3 Jahre)</SelectItem>
+                                <SelectItem value="advanced">Profi (3+ Jahre)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="equipment" className="text-blue-950 font-semibold">Zugang zu Equipment</FieldLabel>
+                        <Select
+                            value={formData.equipmentAccess}
+                            onValueChange={(val) => handleChange('equipmentAccess', val)}
+                        >
+                            <SelectTrigger id="equipment" className="bg-slate-50 border-slate-200">
+                                <SelectValue placeholder="Bitte wählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Kein Equipment</SelectItem>
+                                <SelectItem value="home">Home Gym / Kleingeräte</SelectItem>
+                                <SelectItem value="gym">Fitnessstudio</SelectItem>
+                                <SelectItem value="both">Beides</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel htmlFor="time" className="text-blue-950 font-semibold">Zeit pro Einheit</FieldLabel>
+                        <Select
+                            value={formData.timeAvailable}
+                            onValueChange={(val) => handleChange('timeAvailable', val)}
+                        >
+                            <SelectTrigger id="time" className="bg-slate-50 border-slate-200">
+                                <SelectValue placeholder="Bitte wählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="less-30">Weniger als 30 Min</SelectItem>
+                                <SelectItem value="30-60">30-60 Minuten</SelectItem>
+                                <SelectItem value="60-90">60-90 Minuten</SelectItem>
+                                <SelectItem value="90+">90+ Minuten</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                </FieldGroup>
+            </section>
+
+            {/* Health & Goals */}
+            <section>
+                <FormSectionHeader 
+                    icon={HeartPulse} 
+                    title="Gesundheit & Ziele" 
+                    description="Definieren Sie Ihre Ziele und informieren Sie uns über Einschränkungen."
+                />
+                <FieldGroup className="space-y-6">
                 <Field>
-                  <FieldLabel htmlFor="age">Age Group *</FieldLabel>
-                  <Select value={formData.ageGroup} onValueChange={(val) => handleChange('ageGroup', val)}>
-                    <SelectTrigger id="age">
-                      <SelectValue placeholder="Select age group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="18-25">18-25 years</SelectItem>
-                      <SelectItem value="26-35">26-35 years</SelectItem>
-                      <SelectItem value="36-45">36-45 years</SelectItem>
-                      <SelectItem value="46-55">46-55 years</SelectItem>
-                      <SelectItem value="56-65">56-65 years</SelectItem>
-                      <SelectItem value="65+">65+ years</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.ageGroup && <FieldError>{errors.ageGroup}</FieldError>}
+                    <FieldLabel htmlFor="goals" className="text-blue-950 font-semibold">Was sind Ihre Hauptziele?</FieldLabel>
+                    <Textarea
+                        id="goals"
+                        value={formData.healthGoals}
+                        onChange={(e) => handleChange('healthGoals', e.target.value)}
+                        placeholder="z.B. Muskelaufbau, Gewichtsverlust, Ausdauer verbessern..."
+                        rows={3}
+                        className="bg-slate-50 border-slate-200 focus:border-blue-500 resize-none"
+                    />
                 </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="gender">Gender</FieldLabel>
-                  <Select value={formData.gender} onValueChange={(val) => handleChange('gender', val)}>
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                      <SelectItem value="prefer-not">Prefer not to say</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <FieldLabel htmlFor="injuries" className="text-blue-950 font-semibold">Verletzungen oder Einschränkungen?</FieldLabel>
+                    <Textarea
+                        id="injuries"
+                        value={formData.injuriesConditions}
+                        onChange={(e) => handleChange('injuriesConditions', e.target.value)}
+                        placeholder="z.B. Rückenschmerzen, Knieprobleme, Asthma..."
+                        rows={3}
+                        className="bg-slate-50 border-slate-200 focus:border-blue-500 resize-none"
+                    />
                 </Field>
-              </div>
-            </FieldGroup>
-          </FieldSet>
+                
+                <div className="grid gap-6 md:grid-cols-2">
+                    <Field>
+                        <FieldLabel htmlFor="motivation" className="text-blue-950 font-semibold">Was motiviert Sie?</FieldLabel>
+                        <Textarea
+                            id="motivation"
+                            value={formData.motivation}
+                            onChange={(e) => handleChange('motivation', e.target.value)}
+                            placeholder="z.B. Wohlbefinden, Vorbereitung auf Event..."
+                            rows={3}
+                            className="bg-slate-50 border-slate-200 focus:border-blue-500 resize-none"
+                        />
+                    </Field>
 
-          <FieldSeparator />
+                    <Field>
+                        <FieldLabel htmlFor="challenges" className="text-blue-950 font-semibold">Größte Herausforderungen?</FieldLabel>
+                        <Textarea
+                            id="challenges"
+                            value={formData.challenges}
+                            onChange={(e) => handleChange('challenges', e.target.value)}
+                            placeholder="z.B. Zeitmangel, Motivation, Unsicherheit..."
+                            rows={3}
+                            className="bg-slate-50 border-slate-200 focus:border-blue-500 resize-none"
+                        />
+                    </Field>
+                </div>
+                </FieldGroup>
+            </section>
 
-          {/* Fitness Background */}
-          <FieldSet>
-            <FieldLegend variant="label" className="text-xl">
-              Fitness Background
-            </FieldLegend>
-            <FieldGroup className="gap-4">
-              <Field>
-                <FieldLabel htmlFor="activity">Current Activity Level</FieldLabel>
-                <Select
-                  value={formData.currentActivityLevel}
-                  onValueChange={(val) => handleChange('currentActivityLevel', val)}
-                >
-                  <SelectTrigger id="activity">
-                    <SelectValue placeholder="Select activity level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sedentary">Sedentary (Little or no exercise)</SelectItem>
-                    <SelectItem value="light">Light (1-3 days/week)</SelectItem>
-                    <SelectItem value="moderate">Moderate (3-5 days/week)</SelectItem>
-                    <SelectItem value="active">Active (6-7 days/week)</SelectItem>
-                    <SelectItem value="very-active">Very Active (Professional athlete)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="experience">Fitness Experience</FieldLabel>
-                <Select
-                  value={formData.fitnessExperience}
-                  onValueChange={(val) => handleChange('fitnessExperience', val)}
-                >
-                  <SelectTrigger id="experience">
-                    <SelectValue placeholder="Select experience level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beginner">Beginner (New to fitness)</SelectItem>
-                    <SelectItem value="intermediate">Intermediate (1-3 years)</SelectItem>
-                    <SelectItem value="advanced">Advanced (3+ years)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="equipment">Equipment Access</FieldLabel>
-                <Select
-                  value={formData.equipmentAccess}
-                  onValueChange={(val) => handleChange('equipmentAccess', val)}
-                >
-                  <SelectTrigger id="equipment">
-                    <SelectValue placeholder="Select equipment access" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No equipment</SelectItem>
-                    <SelectItem value="home">Home equipment</SelectItem>
-                    <SelectItem value="gym">Gym membership</SelectItem>
-                    <SelectItem value="both">Both home and gym</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="time">Time Available for Exercise</FieldLabel>
-                <Select
-                  value={formData.timeAvailable}
-                  onValueChange={(val) => handleChange('timeAvailable', val)}
-                >
-                  <SelectTrigger id="time">
-                    <SelectValue placeholder="Select time available" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="less-30">Less than 30 minutes</SelectItem>
-                    <SelectItem value="30-60">30-60 minutes</SelectItem>
-                    <SelectItem value="60-90">60-90 minutes</SelectItem>
-                    <SelectItem value="90+">90+ minutes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-            </FieldGroup>
-          </FieldSet>
-
-          <FieldSeparator />
-
-          {/* Health & Goals */}
-          <FieldSet>
-            <FieldLegend variant="label" className="text-xl">
-              Health & Goals
-            </FieldLegend>
-            <FieldGroup className="gap-4">
-              <Field>
-                <FieldLabel htmlFor="goals">What are your main fitness goals?</FieldLabel>
-                <Textarea
-                  id="goals"
-                  value={formData.healthGoals}
-                  onChange={(e) => handleChange('healthGoals', e.target.value)}
-                  placeholder="e.g., Build muscle, lose weight, improve cardiovascular health..."
-                  rows={3}
+            {/* Additional Information */}
+            <section>
+                <FormSectionHeader 
+                    icon={MessageSquare} 
+                    title="Sonstiges" 
                 />
-                <FieldDescription>
-                  Tell us what you want to achieve with your fitness program.
-                </FieldDescription>
-              </Field>
+                <Field>
+                    <FieldLabel htmlFor="comments" className="text-blue-950 font-semibold">Zusätzliche Anmerkungen</FieldLabel>
+                    <Textarea
+                        id="comments"
+                        value={formData.comments}
+                        onChange={(e) => handleChange('comments', e.target.value)}
+                        placeholder="Gibt es noch etwas, das wir wissen sollten?"
+                        rows={3}
+                        className="bg-slate-50 border-slate-200 focus:border-blue-500 resize-none"
+                    />
+                </Field>
+            </section>
 
-              <Field>
-                <FieldLabel htmlFor="injuries">Any injuries or health conditions?</FieldLabel>
-                <Textarea
-                  id="injuries"
-                  value={formData.injuriesConditions}
-                  onChange={(e) => handleChange('injuriesConditions', e.target.value)}
-                  placeholder="e.g., Lower back pain, knee issues, asthma..."
-                  rows={3}
-                />
-                <FieldDescription>
-                  Please list any injuries, chronic conditions, or health concerns we should know
-                  about.
-                </FieldDescription>
-              </Field>
+            {/* Footer Actions */}
+            <div className="flex flex-col-reverse md:flex-row gap-4 pt-4 border-t border-slate-100">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="lg"
+                    onClick={() => {
+                        if(confirm('Möchten Sie das Formular wirklich zurücksetzen?')) {
+                            setFormData({
+                                patientName: '',
+                                patientEmail: '',
+                                ageGroup: '',
+                                gender: '',
+                                currentActivityLevel: '',
+                                healthGoals: '',
+                                injuriesConditions: '',
+                                equipmentAccess: '',
+                                timeAvailable: '',
+                                fitnessExperience: '',
+                                motivation: '',
+                                challenges: '',
+                                comments: '',
+                            })
+                        }
+                    }}
+                    className="flex-1 text-slate-500 hover:text-red-500 hover:bg-red-50"
+                >
+                    <RotateCcw className="mr-2 h-4 w-4" /> Formular leeren
+                </Button>
 
-              <Field>
-                <FieldLabel htmlFor="motivation">What motivates you to exercise?</FieldLabel>
-                <Textarea
-                  id="motivation"
-                  value={formData.motivation}
-                  onChange={(e) => handleChange('motivation', e.target.value)}
-                  placeholder="e.g., Feel better, improve health, prepare for an event..."
-                  rows={3}
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="challenges">What challenges do you face?</FieldLabel>
-                <Textarea
-                  id="challenges"
-                  value={formData.challenges}
-                  onChange={(e) => handleChange('challenges', e.target.value)}
-                  placeholder="e.g., Lack of motivation, time constraints, uncertainty about proper form..."
-                  rows={3}
-                />
-                <FieldDescription>
-                  What barriers prevent you from exercising regularly?
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </FieldSet>
-
-          <FieldSeparator />
-
-          {/* Additional Information */}
-          <Field>
-            <FieldLabel htmlFor="comments">Additional Comments</FieldLabel>
-            <Textarea
-              id="comments"
-              value={formData.comments}
-              onChange={(e) => handleChange('comments', e.target.value)}
-              placeholder="Any other information you'd like us to know..."
-              rows={3}
-            />
-          </Field>
-
-          <div className="mt-8 flex gap-3">
-            <Button type="submit" disabled={isSubmitting} size="lg" className="flex-1 md:flex-none">
-              {isSubmitting ? 'Submitting...' : 'Submit Evaluation'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={() => setFormData({
-                patientName: '',
-                patientEmail: '',
-                ageGroup: '',
-                gender: '',
-                currentActivityLevel: '',
-                healthGoals: '',
-                injuriesConditions: '',
-                equipmentAccess: '',
-                timeAvailable: '',
-                fitnessExperience: '',
-                motivation: '',
-                challenges: '',
-                comments: '',
-              })}
-              className="flex-1 md:flex-none"
-            >
-              Clear Form
-            </Button>
-          </div>
-        </FieldSet>
-      </div>
-    </form>
+                <Button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    size="lg" 
+                    className="flex-[2] bg-blue-900 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20 text-lg h-14"
+                >
+                    {isSubmitting ? (
+                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Wird gesendet...</>
+                    ) : (
+                        <><Send className="mr-2 h-5 w-5" /> Evaluation Absenden</>
+                    )}
+                </Button>
+            </div>
+        </div>
+        </form>
+    </div>
   )
 }
