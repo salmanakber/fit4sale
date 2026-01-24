@@ -484,7 +484,6 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                 </div>
               </div>
             )}
-            
           </div>
         </Card>
       </div>
