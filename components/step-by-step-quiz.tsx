@@ -12,10 +12,12 @@ import {
   Clock, 
   Mail, 
   Loader2,
-  Check
+  Check,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// --- Interfaces ---
 interface QuizOption {
   id: string;
   option_text: string;
@@ -35,7 +37,6 @@ interface IntroSettings {
   description: string;
   estimated_time: string;
   button_text?: string;
-  additional_text?: string;
 }
 
 interface QuizData {
@@ -48,17 +49,27 @@ interface Answers {
 }
 
 export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void }) {
+  // --- State ---
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentStep, setCurrentStep] = useState<'intro' | 'email' | number>('intro');
+  
+  // Navigation State
+  const [currentStep, setCurrentStep] = useState<'intro' | 'contact' | number>('intro');
+  
+  // Data State
   const [answers, setAnswers] = useState<Answers>({});
-  const [email, setEmail] = useState('');
+  
+  // Contact Form State
   const [title, setTitle] = useState<'Herr' | 'Frau' | ''>('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [emailError, setEmailError] = useState('');
+  const [email, setEmail] = useState('');
+  
+  // UI State
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // --- Fetch Data ---
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
@@ -72,94 +83,69 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
         setLoading(false);
       }
     };
-
     fetchQuiz();
   }, []);
 
-  const handleAnswerChange = (
-    questionId: string,
-    value: string,
-    isMultiple: boolean
-  ) => {
+  // --- Handlers ---
+  const handleAnswerChange = (questionId: string, value: string, isMultiple: boolean) => {
     if (isMultiple) {
       const currentAnswers = (answers[questionId] as string[]) || [];
       if (currentAnswers.includes(value)) {
-        setAnswers({
-          ...answers,
-          [questionId]: currentAnswers.filter((a) => a !== value),
-        });
+        setAnswers({ ...answers, [questionId]: currentAnswers.filter((a) => a !== value) });
       } else {
-        setAnswers({
-          ...answers,
-          [questionId]: [...currentAnswers, value],
-        });
+        setAnswers({ ...answers, [questionId]: [...currentAnswers, value] });
       }
     } else {
-      setAnswers({
-        ...answers,
-        [questionId]: value,
-      });
-      // Optional: Auto-advance on single choice selection after a short delay
-      // setTimeout(() => handleNext(), 300); 
+      setAnswers({ ...answers, [questionId]: value });
+      // Optional: Auto-advance for radio buttons (feels nice on mobile)
+      // setTimeout(() => handleNext(), 250);
     }
   };
 
-  const validateEmail = (e: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(e);
-  };
+  const validateEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
   const handleNext = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     if (currentStep === 'intro') {
-      setCurrentStep('email');
-    } else if (currentStep === 'email') {
-      // Validate all required fields
-      if (!title) {
-        setEmailError('Bitte wählen Sie eine Anrede (Herr/Frau)');
-        return;
+      setCurrentStep('contact');
+    } 
+    else if (currentStep === 'contact') {
+      // Validate Contact Form
+      const errors: {[key: string]: string} = {};
+      
+      if (!title) errors.title = "Bitte wählen";
+      if (!firstName.trim()) errors.firstName = "Vorname fehlt";
+      if (!lastName.trim()) errors.lastName = "Nachname fehlt";
+      if (!email.trim()) errors.email = "E-Mail fehlt";
+      else if (!validateEmail(email)) errors.email = "Ungültige E-Mail";
+
+      setFormErrors(errors);
+
+      if (Object.keys(errors).length === 0) {
+        setCurrentStep(0); // Start questions
       }
-      if (!firstName.trim()) {
-        setEmailError('Bitte geben Sie Ihren Vornamen ein');
-        return;
-      }
-      if (!lastName.trim()) {
-        setEmailError('Bitte geben Sie Ihren Nachnamen ein');
-        return;
-      }
-      if (!email.trim()) {
-        setEmailError('Bitte geben Sie eine E-Mail-Adresse ein');
-        return;
-      }
-      if (!validateEmail(email)) {
-        setEmailError('Bitte geben Sie eine gültige E-Mail-Adresse ein');
-        return;
-      }
-      setEmailError('');
-      setCurrentStep(0);
-    } else if (typeof currentStep === 'number') {
+    } 
+    else if (typeof currentStep === 'number') {
       const nextStep = currentStep + 1;
       if (quizData && nextStep < quizData.questions.length) {
         setCurrentStep(nextStep);
-      } else {
-        // Prepare for submission if it's the last question handled here
-        // Usually handled by the button logic below
       }
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePrevious = () => {
-    if (currentStep === 'email') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (currentStep === 'contact') {
       setCurrentStep('intro');
     } else if (typeof currentStep === 'number') {
       const prevStep = currentStep - 1;
       if (prevStep >= 0) {
         setCurrentStep(prevStep);
       } else {
-        setCurrentStep('email');
+        setCurrentStep('contact');
       }
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = async () => {
@@ -167,10 +153,10 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
     try {
       await onSubmit({
         participant_email: email,
-        title: title,
+        title,
         first_name: firstName,
         last_name: lastName,
-        answers: answers,
+        answers,
       });
     } catch (error) {
       console.error('Error submitting quiz:', error);
@@ -179,35 +165,36 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
     }
   };
 
+  // --- Loading State ---
   if (loading || !quizData) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-900" />
-        <p className="text-slate-500 font-medium tracking-wide">Wird geladen...</p>
+        <Loader2 className="h-10 w-10 animate-spin text-blue-900" />
+        <p className="text-slate-500 font-medium">Lade Quiz...</p>
       </div>
     );
   }
 
+  // --- Progress Logic ---
   const totalSteps = quizData.questions.length;
   const isIntro = currentStep === 'intro';
-  const isEmailStep = currentStep === 'email';
+  const isContactStep = currentStep === 'contact';
   const questionIndex = typeof currentStep === 'number' ? currentStep : -1;
   const currentQuestion = typeof currentStep === 'number' ? quizData.questions[currentStep] : null;
   const isLastQuestion = typeof currentStep === 'number' && currentStep === totalSteps - 1;
   
-  // Progress Calculation
   let progressPercent = 0;
   if (!isIntro) {
-     if (isEmailStep) progressPercent = 5;
+     if (isContactStep) progressPercent = 5;
      else progressPercent = 5 + (((questionIndex + 1) / totalSteps) * 95);
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans">
       
-      {/* Mobile Logo (Top) */}
-      <div className="mb-6 md:hidden">
-          <div className="relative h-10 w-32">
+      {/* Mobile Header Logo */}
+      <div className="mb-6 w-full max-w-3xl flex justify-center md:justify-start">
+          <div className="relative h-12 w-32">
              <Image
                 src="/fit4sale-logo.png"
                 alt="Fit4Sale Logo"
@@ -219,44 +206,33 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
 
       <div className="w-full max-w-3xl relative">
         
-        {/* Progress Bar (Floating above card) */}
+        {/* Floating Progress Bar */}
         {!isIntro && (
-          <div className="mb-6 px-1">
-            <div className="flex justify-between items-center mb-2 text-xs font-medium text-slate-500 uppercase tracking-wider">
+          <div className="mb-6 px-1 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex justify-between items-center mb-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
               <span>
-                 {isEmailStep ? "Start" : `Frage ${questionIndex + 1} / ${totalSteps}`}
+                 {isContactStep ? "Ihre Daten" : `Frage ${questionIndex + 1} von ${totalSteps}`}
               </span>
-              <span>
-                {Math.round(progressPercent)}%
-              </span>
+              <span>{Math.round(progressPercent)}%</span>
             </div>
-            <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-2 w-full bg-white rounded-full overflow-hidden shadow-sm border border-slate-100">
               <div
-                className="h-full bg-blue-900 rounded-full transition-all duration-500 ease-out"
+                className="h-full bg-blue-900 rounded-full transition-all duration-700 ease-out"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
           </div>
         )}
 
-        <Card className="overflow-hidden rounded-2xl border-0 shadow-2xl shadow-blue-900/10 bg-white">
-          <div className="p-8 md:p-12">
+        {/* Main Card */}
+        <Card className="overflow-hidden rounded-3xl border-0 shadow-2xl shadow-blue-900/5 bg-white">
+          <div className="p-6 md:p-10 lg:p-12">
             
-            {isIntro ? (
-              // --- INTRO SCREEN ---
-              <div className="flex flex-col items-center text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                <div className="hidden md:block relative h-16 w-48 mb-4">
-                  <Image
-                    src="/fit4sale-logo.png"
-                    alt="Fit4Sale Logo"
-                    fill
-                    className="object-contain"
-                    priority
-                  />
-                </div>
-                
+            {/* --- SCREEN 1: INTRO --- */}
+            {isIntro && (
+              <div className="flex flex-col items-center text-center space-y-8 animate-in zoom-in-95 duration-500">
                 <div className="space-y-4 max-w-lg">
-                  <h1 className="text-3xl md:text-5xl font-bold text-blue-950 tracking-tight">
+                  <h1 className="text-3xl md:text-5xl font-bold text-blue-950 tracking-tight leading-tight">
                     {quizData.intro.title}
                   </h1>
                   <p className="text-lg text-slate-600 leading-relaxed">
@@ -264,186 +240,172 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-full bg-blue-50 px-5 py-2.5 text-blue-800 font-medium">
+                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-6 py-3 text-blue-800 font-semibold shadow-sm">
                   <Clock className="h-5 w-5" />
                   <span>{quizData.intro.estimated_time}</span>
                 </div>
 
-                <div className="pt-4 w-full max-w-xs">
+                <div className="w-full max-w-xs pt-4">
                     <Button
                         onClick={handleNext}
                         size="lg"
-                        className="w-full h-14 text-lg bg-blue-900 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20 rounded-xl transition-transform hover:scale-105"
+                        className="w-full h-14 text-lg font-bold bg-blue-900 hover:bg-blue-800 text-white shadow-xl shadow-blue-900/20 rounded-2xl transition-transform active:scale-95"
                     >
                         {quizData.intro.button_text || "Jetzt Starten"}
                     </Button>
                 </div>
               </div>
+            )}
 
-            ) : isEmailStep ? (
-              // --- EMAIL SCREEN ---
-              <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
+            {/* --- SCREEN 2: CONTACT FORM --- */}
+            {isContactStep && (
+              <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
                 <div className="text-center md:text-left space-y-2">
                   <h2 className="text-2xl md:text-3xl font-bold text-blue-950">
                     Ihre Kontaktdaten
                   </h2>
                   <p className="text-slate-500 text-lg">
-                    Bitte geben Sie Ihre Daten ein, damit wir Ihnen die Auswertung senden können.
+                    Für Ihre persönliche Auswertung.
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  {/* Title (Anrede) */}
+                <div className="space-y-5">
+                  
+                  {/* Title Selection */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Anrede <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={title}
-                      onChange={(e) => {
-                        setTitle(e.target.value as 'Herr' | 'Frau' | '');
-                        setEmailError('');
-                      }}
-                      className={cn(
-                        "w-full px-4 py-3 text-lg bg-slate-50 border-2 rounded-xl focus:outline-none transition-all duration-200",
-                        emailError && !title
-                          ? "border-red-300 focus:border-red-500 bg-red-50/50" 
-                          : "border-slate-100 focus:border-blue-600 focus:bg-white text-slate-900"
-                      )}
-                    >
-                      <option value="">Bitte wählen...</option>
-                      <option value="Herr">Herr</option>
-                      <option value="Frau">Frau</option>
-                    </select>
-                  </div>
-
-                  {/* First Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Vorname <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => {
-                        setFirstName(e.target.value);
-                        setEmailError('');
-                      }}
-                      placeholder="Max"
-                      className={cn(
-                        "w-full px-4 py-3 text-lg bg-slate-50 border-2 rounded-xl focus:outline-none transition-all duration-200",
-                        emailError && !firstName.trim()
-                          ? "border-red-300 focus:border-red-500 bg-red-50/50 text-red-900 placeholder:text-red-300" 
-                          : "border-slate-100 focus:border-blue-600 focus:bg-white text-slate-900"
-                      )}
-                    />
-                  </div>
-
-                  {/* Last Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Nachname <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => {
-                        setLastName(e.target.value);
-                        setEmailError('');
-                      }}
-                      placeholder="Mustermann"
-                      className={cn(
-                        "w-full px-4 py-3 text-lg bg-slate-50 border-2 rounded-xl focus:outline-none transition-all duration-200",
-                        emailError && !lastName.trim()
-                          ? "border-red-300 focus:border-red-500 bg-red-50/50 text-red-900 placeholder:text-red-300" 
-                          : "border-slate-100 focus:border-blue-600 focus:bg-white text-slate-900"
-                      )}
-                    />
-                  </div>
-
-                  {/* Email */}
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-4 h-6 w-6 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      E-Mail-Adresse <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setEmailError('');
-                      }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                      placeholder="name@beispiel.de"
-                      className={cn(
-                          "w-full pl-12 pr-4 py-3 text-lg bg-slate-50 border-2 rounded-xl focus:outline-none transition-all duration-200",
-                          emailError 
-                              ? "border-red-300 focus:border-red-500 bg-red-50/50 text-red-900 placeholder:text-red-300" 
-                              : "border-slate-100 focus:border-blue-600 focus:bg-white text-slate-900"
-                      )}
-                    />
-                  </div>
-
-                  {emailError && (
-                    <div className="flex items-center gap-1 text-sm text-red-500 font-medium animate-in slide-in-from-top-1">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500"></span>
-                        {emailError}
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Anrede</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {['Herr', 'Frau'].map((option) => (
+                        <div
+                          key={option}
+                          onClick={() => {
+                            setTitle(option as any);
+                            setFormErrors(prev => ({...prev, title: ''}));
+                          }}
+                          className={cn(
+                            "cursor-pointer rounded-xl border-2 py-3 px-4 text-center font-medium transition-all",
+                            title === option 
+                              ? "border-blue-600 bg-blue-50 text-blue-900" 
+                              : "border-slate-100 bg-slate-50 text-slate-500 hover:bg-white hover:border-blue-200",
+                            formErrors.title && !title && "border-red-300 bg-red-50"
+                          )}
+                        >
+                          {option}
+                        </div>
+                      ))}
                     </div>
-                  )}
+                    {formErrors.title && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.title}</p>}
+                  </div>
+
+                  {/* Name Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Vorname</label>
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                        <input
+                          type="text"
+                          value={firstName}
+                          onChange={(e) => {
+                            setFirstName(e.target.value);
+                            setFormErrors(prev => ({...prev, firstName: ''}));
+                          }}
+                          className={cn(
+                            "w-full pl-12 pr-4 h-14 bg-slate-50 border-2 rounded-xl focus:outline-none transition-all text-lg",
+                            formErrors.firstName ? "border-red-300 bg-red-50" : "border-slate-100 focus:border-blue-600 focus:bg-white"
+                          )}
+                          placeholder="Max"
+                        />
+                      </div>
+                      {formErrors.firstName && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.firstName}</p>}
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Nachname</label>
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => {
+                          setLastName(e.target.value);
+                          setFormErrors(prev => ({...prev, lastName: ''}));
+                        }}
+                        className={cn(
+                          "w-full px-4 h-14 bg-slate-50 border-2 rounded-xl focus:outline-none transition-all text-lg",
+                          formErrors.lastName ? "border-red-300 bg-red-50" : "border-slate-100 focus:border-blue-600 focus:bg-white"
+                        )}
+                        placeholder="Mustermann"
+                      />
+                      {formErrors.lastName && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.lastName}</p>}
+                    </div>
+                  </div>
+
+                  {/* Email Field */}
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">E-Mail-Adresse</label>
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setFormErrors(prev => ({...prev, email: ''}));
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                        className={cn(
+                            "w-full pl-12 pr-4 h-14 bg-slate-50 border-2 rounded-xl focus:outline-none transition-all text-lg",
+                            formErrors.email ? "border-red-300 bg-red-50" : "border-slate-100 focus:border-blue-600 focus:bg-white"
+                        )}
+                        placeholder="name@beispiel.de"
+                      />
+                    </div>
+                    {formErrors.email && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.email}</p>}
+                  </div>
                 </div>
 
-                <div className="pt-4 flex gap-4">
+                <div className="pt-6 flex gap-3">
                   <Button
                     variant="ghost"
-                    size="lg"
                     onClick={handlePrevious}
-                    className="flex-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 h-14"
+                    className="h-14 px-6 text-slate-500 hover:text-slate-900 rounded-xl"
                   >
                     Zurück
                   </Button>
                   <Button 
                     onClick={handleNext} 
-                    size="lg" 
-                    className="flex-[2] bg-blue-900 hover:bg-blue-800 text-white h-14 text-lg rounded-xl shadow-md"
+                    className="flex-1 h-14 bg-blue-900 hover:bg-blue-800 text-white text-lg font-semibold rounded-xl shadow-lg shadow-blue-900/10"
                   >
                     Weiter <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </div>
               </div>
+            )}
 
-            ) : currentQuestion ? (
-              // --- QUESTION SCREEN ---
+            {/* --- SCREEN 3: QUESTIONS --- */}
+            {currentQuestion && (
               <div className="space-y-8 animate-in slide-in-from-right-8 fade-in duration-500" key={currentQuestion.id}>
                 
                 {/* Question Header */}
                 <div className="space-y-4">
                     <span className="inline-block text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-wide">
-                        {currentQuestion.question_type === 'radio' ? 'Eine Auswahl' : 'Mehrfachauswahl'}
+                        {currentQuestion.question_type === 'radio' ? 'Bitte wählen Sie eine Option' : 'Mehrfachauswahl möglich'}
                     </span>
-                    <h2 className="text-2xl md:text-3xl font-bold text-blue-950 leading-tight">
-                    {currentQuestion.question_text}
+                    <h2 className="text-2xl md:text-3xl font-bold text-blue-950 leading-snug">
+                       {currentQuestion.question_text}
                     </h2>
                 </div>
 
-                {/* Options Grid */}
+                {/* Options / Input Area */}
                 <div className="space-y-3">
                   {currentQuestion.question_type === 'textarea' ? (
-                    <div className="relative">
-                        <textarea
-                            value={typeof answers[currentQuestion.id] === 'string' ? answers[currentQuestion.id] : ''}
-                            onChange={(e) => {
-                            setAnswers({
-                                ...answers,
-                                [currentQuestion.id]: e.target.value,
-                            });
-                            }}
-                            autoFocus
-                            placeholder="Schreiben Sie hier Ihre Antwort..."
-                            rows={6}
-                            className="w-full p-4 text-lg bg-slate-50 border-2 border-slate-100 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-50 transition-all resize-none text-slate-900"
-                        />
-                    </div>
+                    <textarea
+                        value={typeof answers[currentQuestion.id] === 'string' ? answers[currentQuestion.id] : ''}
+                        onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
+                        autoFocus
+                        placeholder="Tippen Sie hier..."
+                        rows={6}
+                        className="w-full p-5 text-lg bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-50 transition-all resize-none text-slate-900"
+                    />
                   ) : (
                     <div className="grid grid-cols-1 gap-3">
                         {currentQuestion.quiz_answer_options.map((option) => {
@@ -456,17 +418,18 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                                     key={option.id}
                                     onClick={() => handleAnswerChange(currentQuestion.id, option.option_value, currentQuestion.question_type !== 'radio')}
                                     className={cn(
-                                        "group relative flex items-center p-4 md:p-5 border-2 rounded-xl cursor-pointer transition-all duration-200 select-none",
+                                        "group relative flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 select-none active:scale-[0.99]",
                                         isSelected 
-                                            ? "border-blue-600 bg-blue-50/50 shadow-md shadow-blue-900/5" 
-                                            : "border-slate-100 bg-white hover:border-blue-300 hover:bg-slate-50"
+                                            ? "border-blue-600 bg-blue-50/60 shadow-inner" 
+                                            : "border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50 hover:shadow-sm"
                                     )}
                                 >
+                                    {/* Custom Checkbox/Radio UI */}
                                     <div className={cn(
-                                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-200 mr-4",
+                                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-all duration-200 mr-4",
                                         isSelected 
                                             ? "border-blue-600 bg-blue-600 text-white" 
-                                            : "border-slate-300 bg-white group-hover:border-blue-400"
+                                            : "border-slate-200 bg-slate-50 group-hover:border-blue-300"
                                     )}>
                                         {currentQuestion.question_type === 'radio' ? (
                                             isSelected && <Circle className="h-2.5 w-2.5 fill-current" />
@@ -476,7 +439,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                                     </div>
                                     
                                     <span className={cn(
-                                        "text-lg font-medium transition-colors",
+                                        "text-lg font-medium transition-colors leading-snug",
                                         isSelected ? "text-blue-900" : "text-slate-700"
                                     )}>
                                         {option.option_text}
@@ -488,40 +451,40 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   )}
                 </div>
 
-                {/* Footer Navigation */}
-                <div className="flex gap-4 pt-6 border-t border-slate-100 mt-8">
+                {/* Navigation Footer */}
+                <div className="flex gap-3 pt-6 border-t border-slate-100 mt-8">
                   <Button
                     variant="ghost"
-                    size="lg"
                     onClick={handlePrevious}
-                    className="flex-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 h-14 rounded-xl"
+                    className="h-14 w-14 p-0 rounded-2xl text-slate-400 hover:text-slate-900 hover:bg-slate-100"
                   >
-                    <ArrowLeft className="mr-2 h-5 w-5" /> Zurück
+                    <ArrowLeft className="h-6 w-6" />
                   </Button>
                   
                   {isLastQuestion ? (
                     <Button
                       onClick={handleSubmit}
                       disabled={submitting}
-                      className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white h-14 text-lg rounded-xl shadow-lg shadow-emerald-900/20"
+                      className="flex-1 h-14 bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold rounded-2xl shadow-lg shadow-emerald-900/20"
                     >
                       {submitting ? (
-                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Sende...</>
+                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verarbeite...</>
                       ) : (
-                        <><CheckCircle2 className="mr-2 h-5 w-5" /> Jetzt Auswerten</>
+                        <><CheckCircle2 className="mr-2 h-5 w-5" /> Auswertung anfordern</>
                       )}
                     </Button>
                   ) : (
                     <Button 
                         onClick={handleNext} 
-                        className="flex-[2] bg-blue-900 hover:bg-blue-800 text-white h-14 text-lg rounded-xl shadow-lg shadow-blue-900/20"
+                        className="flex-1 h-14 bg-blue-900 hover:bg-blue-800 text-white text-lg font-bold rounded-2xl shadow-lg shadow-blue-900/20"
                     >
                       Weiter
                     </Button>
                   )}
                 </div>
               </div>
-            ) : null}
+            )}
+            
           </div>
         </Card>
       </div>
