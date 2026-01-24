@@ -35,10 +35,10 @@ export async function GET() {
     // Return default if not set
     if (!data) {
       return NextResponse.json({
-        title: 'Fit4Sale Fitness Assessment',
-        description: 'Get personalized fitness recommendations based on your current fitness level and goals.',
+        title: 'Fit4Sale Sales-Check',
+        description: 'Beantworten Sie ein paar Fragen zu Ihrem Vertrieb – Sie erhalten eine vorläufige Auswertung per E-Mail.',
         estimated_time: '8-10 minutes',
-        button_text: 'Start Assessment',
+        button_text: 'Start',
       });
     }
 

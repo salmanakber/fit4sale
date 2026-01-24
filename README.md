@@ -1,36 +1,30 @@
-# Fit4Sale - Online Fitness Evaluation System
+# Fit4Sale – Sales-Check (Umfragesystem)
 
-A comprehensive full-stack application for collecting fitness evaluations, generating personalized recommendations, and managing client assessments.
+Ein vollständiges System zur Durchführung eines Online-Sales-Checks (Umfrage), automatischer Auswertung auf Basis von Benchmarks und Versand von vorläufigen/vollständigen Auswertungen per E‑Mail.
 
 ## Features
 
-### Public Survey Form
-- Comprehensive fitness evaluation questionnaire
-- Patient information collection (name, email, age group, gender)
-- Fitness background assessment (activity level, experience, equipment access, available time)
-- Health and goals information (fitness goals, injuries, motivation, challenges)
+### Öffentliche Umfrage
+- Sales-Check Fragebogen (Quiz)
+- E-Mail ist Pflicht (für Versand der Auswertung)
+- Benchmarks pro Frage/Teilbereich
 - Form validation and error handling
 - Responsive design optimized for mobile and desktop
 
-### Admin Dashboard
+### Admin Dashboard (Adminbereich)
 - Secure authentication system with password protection
-- Survey submission management with search and filtering
-- Detailed submission viewing with all patient information
-- Automated evaluation scoring based on survey responses
-- Manual evaluation creation and editing
-- Evaluation results display with visual score indicators
-- Email notifications for patients
+- Verwaltung der Eingaben (Suche/Filter)
+- Detailansicht inkl. Antworten
+- Automatische vorläufige Auswertung nach Eingabe
+- Vollständige Auswertung nur nach manueller Freigabe
+- E-Mail Versand inkl. Audit-Log
 - Admin activity logging
 
-### Automated Evaluation System
-- Intelligent fitness level scoring (0-100)
-- Readiness assessment based on multiple factors
-- Personalized program recommendations
-- Activity-specific intensity level determination
-- Equipment and time availability consideration
-- Injury/condition-aware modifications
-- Age-appropriate safety considerations
-- Personalized exercise recommendations
+### Auswertungssystem
+- Punktesystem (0–100) anhand Benchmarks
+- Teilbereiche/Kategorien möglich (Benchmarks `category`)
+- Vorläufige Auswertung automatisch per E‑Mail
+- Vollständige Auswertung nach Freigabe
 
 ### Database
 - Secure PostgreSQL database via Supabase

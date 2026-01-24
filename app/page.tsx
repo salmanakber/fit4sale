@@ -14,14 +14,14 @@ export default function Home() {
         body: JSON.stringify(answers),
       });
 
-      if (!response.ok) throw new Error('Failed to submit survey');
+      if (!response.ok) throw new Error('Senden fehlgeschlagen');
 
       const data = await response.json();
-      alert('Survey submitted successfully! You will receive an evaluation shortly.');
+      alert('Danke! Ihre Angaben wurden übermittelt. Sie erhalten die vorläufige Auswertung per E-Mail.');
       router.push('/');
     } catch (error) {
       console.error('Error submitting survey:', error);
-      alert('Failed to submit survey. Please try again.');
+      alert('Senden fehlgeschlagen. Bitte versuchen Sie es erneut.');
     }
   };
 

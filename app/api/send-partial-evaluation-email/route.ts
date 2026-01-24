@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       ? `<p><strong>Kurze Einschätzung:</strong> ${recommendationText}</p>`
       : ''
 
-    // Generate partial evaluation email HTML
+    // Generate partial report email HTML
     const html = `
       <!DOCTYPE html>
       <html>
@@ -113,14 +113,14 @@ export async function POST(request: NextRequest) {
         <body>
           <div class="container">
             <div class="header">
-              <h1>Fit4Sale - Vorläufige Bewertung</h1>
+              <h1>Fit4Sale – Vorläufige Auswertung</h1>
             </div>
             <div class="content">
               <p>Hallo,</p>
-              <p>vielen Dank für die Teilnahme an unserer Fit4Sale-Bewertung. Wir haben Ihre Antworten analysiert und berechnet eine vorläufige Bewertung.</p>
+              <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check. Wir haben Ihre Angaben ausgewertet und eine vorläufige Auswertung erstellt.</p>
               
               <div class="score-card">
-                <p>Ihre Fitnessnote:</p>
+                <p>Ihr Score:</p>
                 <div class="score">${totalScore}/100</div>
               </div>
 
@@ -128,11 +128,11 @@ export async function POST(request: NextRequest) {
               ${categoryHtml}
 
               <p><strong>Nächste Schritte:</strong></p>
-              <p>Ein Betreuer wird Ihre vollständige Bewertung prüfen und innerhalb von 2-3 Geschäftstagen eine detaillierte Bewertung mit personalisierten Empfehlungen senden.</p>
+              <p>Die vollständige Auswertung wird nach manueller Freigabe per E-Mail versendet.</p>
               
-              <p>Falls Sie Fragen haben, kontaktieren Sie uns bitte unter aschwanden@kmu-beratungen.ch</p>
+              <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
               
-              <p>Mit freundlichen Grüßen,<br>Das Fit4Sale-Team</p>
+              <p>Freundliche Grüße<br>KMU-Beratungen</p>
             </div>
             <div class="footer">
               <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     // Send the email (participant)
     const emailResult = await sendEmail(
       participantEmail,
-      'Fit4Sale - Vorläufige Bewertung erhalten',
+      'Fit4Sale – Vorläufige Auswertung',
       html
     )
 
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       submission_id: submissionId,
       recipient_email: participantEmail,
       email_type: 'partial',
-      subject: 'Fit4Sale - Vorläufige Bewertung erhalten',
+      subject: 'Fit4Sale – Vorläufige Auswertung',
       sender_email: 'aschwanden@kmu-beratungen.ch',
       status: 'sent',
       admin_notified: true,
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
     // Admin log entry (notification trail)
     await supabase.from('admin_logs').insert({
       admin_id: null,
-      action: `Partial evaluation email sent to participant (${participantEmail})`,
+      action: `Vorläufige Auswertung per E-Mail versendet (${participantEmail})`,
       submission_id: submissionId,
     })
 

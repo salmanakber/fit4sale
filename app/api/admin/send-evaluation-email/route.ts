@@ -100,19 +100,19 @@ export async function POST(request: NextRequest) {
 
     // Extract data
     const submission = evaluation.quiz_submissions as any
-    const patientName = submission?.patient_name || 'Customer'
+    const patientName = submission?.patient_name || 'Teilnehmer/in'
     const patientEmail = submission?.patient_email || submission?.participant_email
 
     if (!patientEmail) {
       return NextResponse.json(
-        { error: 'Patient email not found' },
+        { error: 'E-Mail-Adresse nicht gefunden' },
         { status: 400 }
       )
     }
 
     if (!submission?.full_evaluation_approved) {
       return NextResponse.json(
-        { error: 'Full evaluation is not approved yet' },
+        { error: 'Noch nicht freigegeben' },
         { status: 400 }
       )
     }
@@ -155,14 +155,14 @@ export async function POST(request: NextRequest) {
     // Log the action
     await supabase.from('admin_logs').insert({
       admin_id: adminSession.value,
-      action: 'Sent evaluation email',
+      action: 'Vollständige Auswertung per E-Mail versendet',
       submission_id: evaluation.submission_id,
     })
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Evaluation email sent successfully',
+        message: 'E-Mail erfolgreich versendet',
       },
       { status: 200 }
     )

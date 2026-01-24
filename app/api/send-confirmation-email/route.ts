@@ -63,15 +63,15 @@ export async function POST(request: NextRequest) {
         <body>
           <div class="container">
             <div class="header">
-              <h1>Fit4Sale - Bewertung eingereicht</h1>
+              <h1>Fit4Sale – Sales-Check eingereicht</h1>
             </div>
             <div class="content">
               <p>Hallo ${body.customerName},</p>
-              <p>vielen Dank, dass Sie unsere Fit4Sale-Bewertung abgeschlossen haben.</p>
+              <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check.</p>
               <p><strong>Ihre Eingabenummer:</strong> ${body.submissionId}</p>
-              <p>Wir werden Ihre Antworten überprüfen und Ihnen in Kürze personalisierte Empfehlungen per E-Mail senden.</p>
-              <p>Bei Fragen kontaktieren Sie uns bitte unter support@fit4sale.com</p>
-              <p>Mit freundlichen Grüßen,<br>Das Fit4Sale-Team</p>
+              <p>Sie erhalten in Kürze eine <strong>vorläufige Auswertung</strong> per E-Mail. Die <strong>vollständige Auswertung</strong> wird nach manueller Freigabe versendet.</p>
+              <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
+              <p>Freundliche Grüße<br>KMU-Beratungen</p>
             </div>
             <div class="footer">
               <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     // Send email using Resend
     const emailSent = await sendEmail(
       body.customerEmail,
-      'Fit4Sale - Bewertung eingereicht',
+      'Fit4Sale – Sales-Check eingereicht',
       html
     )
 

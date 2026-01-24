@@ -74,13 +74,13 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
 
 function generateRecommendations(score: number): string {
   if (score >= 80) {
-    return 'Excellent Fitness Level: Maintain your current routine and consider advanced training programs.'
+    return 'Sehr gut: Ihr Vertrieb ist stark aufgestellt – gezielte Optimierungen bringen schnell Wirkung.'
   } else if (score >= 60) {
-    return 'Good Fitness Level: Continue with your current programs and gradually increase intensity.'
+    return 'Gut: Solide Basis – mit klaren Maßnahmen steigern Sie Abschlussquote und Prozessqualität.'
   } else if (score >= 40) {
-    return 'Moderate Fitness Level: Start a structured fitness program with professional guidance.'
+    return 'Mittel: Es gibt mehrere Hebel – strukturierte Schritte erhöhen Konsistenz und Conversion.'
   } else {
-    return 'Beginner Fitness Level: Begin with basic exercises and consider working with a personal trainer.'
+    return 'Ausbaufähig: Wir empfehlen, Angebot/Zielgruppe/Prozess zuerst sauber zu definieren und zu standardisieren.'
   }
 }
 
@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Survey submitted successfully. A partial evaluation email has been sent.',
+        message: 'Eingabe erfolgreich. Vorläufige Auswertung wurde per E-Mail versendet.',
         submissionId,
         evaluation,
       },
