@@ -77,11 +77,9 @@ export async function PUT(request: NextRequest) {
     if (!adminSession?.value) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-     const dataobj = await request.json();
-    const { title, description, time_estimate, additional_text } = dataobj
-      
 
-      console.log('ssadas data',  dataobj)
+    const { title, description, estimated_time, button_text } =
+      await request.json();
 
     // Get existing settings
     const { data: existing } = await supabase
@@ -97,8 +95,8 @@ export async function PUT(request: NextRequest) {
         .update({
           title,
           description,
-          time_estimate,
-          additional_text,
+          estimated_time,
+          button_text,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existing.id)
@@ -111,8 +109,8 @@ export async function PUT(request: NextRequest) {
         .insert({
           title,
           description,
-          time_estimate,
-          additional_text,
+          estimated_time,
+          button_text,
         })
         .select()
         .single();
