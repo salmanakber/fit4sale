@@ -36,7 +36,8 @@ export default function SubmissionDetailPage() {
           const data = await response.json()
           setSubmission(data.submission)
         } else {
-          router.push('/admin/submissions')
+        console.log(response.json())
+          // router.push('/admin/submissions')
         }
       } catch (error) {
         console.error('[v0] Error fetching submission:', error)
