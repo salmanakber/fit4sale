@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 
 interface SubmissionDetail {
   id: string
-  patient_name: string
+  patient_name: string | null
   patient_email: string | null
   participant_email: string | null
   answers?: any
@@ -118,7 +118,7 @@ export default function SubmissionDetailPage() {
           </Button>
         </Link>
         <h2 className="text-2xl font-bold text-foreground">
-          {submission.patient_name}
+          {submission.patient_name || participantEmail}
         </h2>
       </div>
 
