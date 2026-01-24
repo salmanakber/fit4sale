@@ -29,6 +29,8 @@ export default function SubmissionsPage() {
         const response = await fetch('/api/admin/submissions')
         if (response.ok) {
           const data = await response.json()
+
+          console.log("data inside ", data)
           setSubmissions(data.submissions || [])
           setFilteredSubmissions(data.submissions || [])
         }
@@ -41,6 +43,8 @@ export default function SubmissionsPage() {
 
     fetchSubmissions()
   }, [])
+
+  console.log("submission outsode ", submissions)
 
   useEffect(() => {
     const filtered = submissions?.filter(
