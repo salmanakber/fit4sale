@@ -18,6 +18,8 @@ export async function GET(
       )
     }
 
+    
+
     // Create Supabase client
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -58,9 +58,9 @@ A comprehensive full-stack application for collecting fitness evaluations, gener
 ### Installation
 
 1. **Install dependencies**:
-```bash
+\`\`\`bash
 npm install
-```
+\`\`\`
 
 2. **Set up environment variables** in Vercel:
    - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
@@ -74,9 +74,9 @@ npm install
    - Execute `/scripts/02_create_admin_user.sql` to create the first admin user
 
 4. **Run the development server**:
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 5. **Access the application**:
    - Public survey: `http://localhost:3000`
@@ -85,7 +85,7 @@ npm run dev
 
 ## File Structure
 
-```
+\`\`\`
 ├── app/
 │   ├── page.tsx                          # Public survey page
 │   ├── admin/
@@ -118,7 +118,7 @@ npm run dev
     ├── 01_create_tables.sql              # Database schema
     └── 02_create_admin_user.sql          # Admin user setup
 
-```
+\`\`\`
 
 ## Database Schema
 

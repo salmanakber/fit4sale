@@ -18,4 +18,3 @@ ALTER TABLE quiz_submissions
   ADD COLUMN IF NOT EXISTS patient_email TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_quiz_submissions_patient_email ON quiz_submissions(patient_email);
-

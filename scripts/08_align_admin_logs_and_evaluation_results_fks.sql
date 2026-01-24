@@ -41,4 +41,3 @@ END $$;
 ALTER TABLE admin_logs
   ADD CONSTRAINT IF NOT EXISTS admin_logs_submission_id_fkey
   FOREIGN KEY (submission_id) REFERENCES quiz_submissions(id) ON DELETE SET NULL;
-
