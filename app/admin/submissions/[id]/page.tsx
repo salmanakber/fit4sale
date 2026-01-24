@@ -40,7 +40,7 @@ export default function SubmissionDetailPage() {
         }
       } catch (error) {
         console.error('[v0] Error fetching submission:', error)
-        router.push('/admin/submissions')
+        // router.push('/admin/submissions')
       } finally {
         setIsLoading(false)
       }
