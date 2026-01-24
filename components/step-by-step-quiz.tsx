@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 interface QuizOption {
   id: string;
   option_text: string;
-  value: string;
+  option_value: string;
 }
 
 interface Question {
@@ -22,8 +21,9 @@ interface Question {
 interface IntroSettings {
   title: string;
   description: string;
-  time_estimate: string;
-  additional_text: string;
+  estimated_time: string;
+  button_text?: string;
+  additional_text?: string;
 }
 
 interface QuizData {
@@ -185,7 +185,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
             // Intro Screen
             <div className="space-y-6 text-center">
               <div className="flex justify-center mb-6">
-                <Image
+                <img
                   src="/fit4sale-logo.png"
                   alt="Fit4Sale Logo"
                   width={200}
@@ -290,14 +290,14 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                             type="radio"
                             id={option.id}
                             name={currentQuestion.id}
-                            value={option.value}
+                            value={option.option_value}
                             checked={
-                              answers[currentQuestion.id] === option.value
+                              answers[currentQuestion.id] === option.option_value
                             }
                             onChange={() =>
                               handleAnswerChange(
                                 currentQuestion.id,
-                                option.value,
+                                option.option_value,
                                 false
                               )
                             }
@@ -309,16 +309,16 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                           <input
                             type="checkbox"
                             id={option.id}
-                            value={option.value}
+                            value={option.option_value}
                             checked={
                               Array.isArray(answers[currentQuestion.id])
-                                ? (answers[currentQuestion.id] as string[]).includes(option.value)
+                                ? (answers[currentQuestion.id] as string[]).includes(option.option_value)
                                 : false
                             }
                             onChange={() =>
                               handleAnswerChange(
                                 currentQuestion.id,
-                                option.value,
+                                option.option_value,
                                 true
                               )
                             }
