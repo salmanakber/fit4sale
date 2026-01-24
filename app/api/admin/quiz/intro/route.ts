@@ -124,7 +124,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Error updating intro settings:', error);
     return NextResponse.json(
-      { error: 'Failed to update intro settings' },
+      { error: 'Failed to update intro settings.  ' },
       { status: 500 }
     );
   }
