@@ -43,7 +43,7 @@ export default function SubmissionsPage() {
   }, [])
 
   useEffect(() => {
-    const filtered = submissions.filter(
+    const filtered = submissions?.filter(
       (submission) =>
         submission.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (submission.patient_email || submission.participant_email || '')
