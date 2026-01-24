@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
     const participantName = body.participant_name
     const answers = body.answers || body
 
+    console.log(body)
+
     // Validate required fields
     if (!participantEmail || !answers || Object.keys(answers).length === 0) {
       return NextResponse.json(
