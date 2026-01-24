@@ -1,8 +1,8 @@
 'use client'
 
 import React from "react"
-import { Suspense, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,29 +20,28 @@ import { calculateEvaluationScore, type SurveyData } from '@/lib/evaluation-logi
 
 interface SubmissionData {
   id: string
-  patient_name: string
-  patient_email: string
-  age_group: string
-  current_activity_level: string
-  health_goals: string
-  injuries_conditions: string
-  equipment_access: string
-  time_available: string
-  fitness_experience: string
-  motivation: string
-  challenges: string
+  patient_name: string | null
+  patient_email: string | null
+  participant_email: string | null
+  answers?: any
 }
 
 const Loading = () => null
 
 export default function CreateEvaluationPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const submissionId = useMemo(() => searchParams.get('submission') || '', [searchParams])
 
   const [submission, setSubmission] = useState<SubmissionData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [autoScore, setAutoScore] = useState(true)
   const [showAutoScore, setShowAutoScore] = useState(false)
+
+  const [customFields, setCustomFields] = useState<Array<{ label: string; value: string }>>([
+    { label: 'Summary', value: '' },
+  ])
 
   const [evaluation, setEvaluation] = useState({
     fitnesLevelScore: '',
@@ -55,37 +54,12 @@ export default function CreateEvaluationPage() {
     specialModifications: '',
   })
 
-  const fetchSubmission = async (submissionId: string) => {
+  const fetchSubmission = async (submissionIdToLoad: string) => {
     try {
-      const response = await fetch(`/api/admin/submissions/${submissionId}`)
+      const response = await fetch(`/api/admin/submissions/${submissionIdToLoad}`)
       if (response.ok) {
         const data = await response.json()
         setSubmission(data.submission)
-
-        // Auto-calculate score
-        if (autoScore) {
-          const surveyData: SurveyData = {
-            ageGroup: data.submission.age_group,
-            currentActivityLevel: data.submission.current_activity_level,
-            fitnessExperience: data.submission.fitness_experience,
-            injuriesConditions: data.submission.injuries_conditions,
-            equipmentAccess: data.submission.equipment_access,
-            timeAvailable: data.submission.time_available,
-          }
-
-          const score = calculateEvaluationScore(surveyData)
-          setEvaluation({
-            fitnesLevelScore: score.fitnessLevelScore.toString(),
-            readinessScore: score.readinessScore.toString(),
-            recommendedProgram: score.recommendedProgram,
-            safetyConcerns: score.safetyConcerns,
-            personalizedRecommendations: score.personalisedRecommendations,
-            programDuration: score.programDuration,
-            intensityLevel: score.intensityLevel,
-            specialModifications: score.specialModifications,
-          })
-          setShowAutoScore(true)
-        }
       } else {
         router.push('/admin/submissions')
       }
@@ -96,6 +70,14 @@ export default function CreateEvaluationPage() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!submissionId) {
+      setIsLoading(false)
+      return
+    }
+    fetchSubmission(submissionId)
+  }, [submissionId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,6 +97,7 @@ export default function CreateEvaluationPage() {
           programDuration: evaluation.programDuration,
           intensityLevel: evaluation.intensityLevel,
           specialModifications: evaluation.specialModifications,
+          customFields,
         }),
       })
 
@@ -141,19 +124,85 @@ export default function CreateEvaluationPage() {
             </Button>
           </Link>
           <h2 className="text-2xl font-bold text-foreground">
-            Create Evaluation: {submission?.patient_name}
+            Create Evaluation: {submission?.patient_name || submission?.patient_email || submission?.participant_email || '—'}
           </h2>
         </div>
 
         <form onSubmit={handleSubmit} className="max-w-3xl">
           <div className="rounded-lg border border-border bg-card p-8">
             <FieldSet>
+              {!submissionId && (
+                <div className="mb-6 rounded-lg border border-border bg-muted p-4 text-sm text-foreground">
+                  Missing <span className="font-mono">?submission=&lt;id&gt;</span> in URL.
+                </div>
+              )}
+
               {showAutoScore && (
                 <div className="mb-6 rounded-lg bg-primary/10 p-4 text-sm text-primary">
                   <p className="font-medium mb-2">Auto-calculated evaluation based on survey responses</p>
                   <p>You can adjust these values as needed based on your professional assessment.</p>
                 </div>
               )}
+
+              {submission?.answers && (
+                <div className="mb-6 rounded-lg border border-border bg-muted p-4">
+                  <div className="text-sm font-semibold text-foreground mb-2">Submission answers</div>
+                  <pre className="whitespace-pre-wrap break-words text-xs text-foreground">
+                    {JSON.stringify(submission.answers, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              <div className="mb-6 rounded-lg border border-border bg-card p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">Custom Fields</div>
+                    <div className="text-sm text-muted-foreground">Add/remove fields as needed.</div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="bg-transparent"
+                    onClick={() => setCustomFields((prev) => [...prev, { label: '', value: '' }])}
+                  >
+                    + Add field
+                  </Button>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {customFields.map((f, idx) => (
+                    <div key={idx} className="grid gap-2 md:grid-cols-[1fr,2fr,auto] items-start">
+                      <Input
+                        value={f.label}
+                        onChange={(e) =>
+                          setCustomFields((prev) =>
+                            prev.map((x, i) => (i === idx ? { ...x, label: e.target.value } : x))
+                          )
+                        }
+                        placeholder="Field label"
+                      />
+                      <Input
+                        value={f.value}
+                        onChange={(e) =>
+                          setCustomFields((prev) =>
+                            prev.map((x, i) => (i === idx ? { ...x, value: e.target.value } : x))
+                          )
+                        }
+                        placeholder="Field value"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setCustomFields((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <FieldGroup className="gap-4">
                 <div className="grid gap-4 md:grid-cols-2">

@@ -12,6 +12,7 @@ interface CreateEvaluationBody {
   programDuration: string
   intensityLevel: string
   specialModifications: string
+  customFields?: Array<{ label: string; value: string }>
 }
 
 export async function POST(request: NextRequest) {
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
         program_duration: body.programDuration,
         intensity_level: body.intensityLevel,
         special_modifications: body.specialModifications,
+        custom_fields: body.customFields || null,
         evaluation_completed_at: new Date().toISOString(),
       })
       .select()
