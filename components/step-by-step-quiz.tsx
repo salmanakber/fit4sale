@@ -53,6 +53,9 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
   const [currentStep, setCurrentStep] = useState<'intro' | 'email' | number>('intro');
   const [answers, setAnswers] = useState<Answers>({});
   const [email, setEmail] = useState('');
+  const [title, setTitle] = useState<'Herr' | 'Frau' | ''>('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [emailError, setEmailError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -110,6 +113,19 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
     if (currentStep === 'intro') {
       setCurrentStep('email');
     } else if (currentStep === 'email') {
+      // Validate all required fields
+      if (!title) {
+        setEmailError('Bitte wählen Sie eine Anrede (Herr/Frau)');
+        return;
+      }
+      if (!firstName.trim()) {
+        setEmailError('Bitte geben Sie Ihren Vornamen ein');
+        return;
+      }
+      if (!lastName.trim()) {
+        setEmailError('Bitte geben Sie Ihren Nachnamen ein');
+        return;
+      }
       if (!email.trim()) {
         setEmailError('Bitte geben Sie eine E-Mail-Adresse ein');
         return;
@@ -151,6 +167,9 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
     try {
       await onSubmit({
         participant_email: email,
+        title: title,
+        first_name: firstName,
+        last_name: lastName,
         answers: answers,
       });
     } catch (error) {
@@ -263,44 +282,118 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
 
             ) : isEmailStep ? (
               // --- EMAIL SCREEN ---
-              <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
+              <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
                 <div className="text-center md:text-left space-y-2">
                   <h2 className="text-2xl md:text-3xl font-bold text-blue-950">
-                    Ihre E-Mail-Adresse
+                    Ihre Kontaktdaten
                   </h2>
                   <p className="text-slate-500 text-lg">
-                    Wohin dürfen wir Ihre persönliche Auswertung senden?
+                    Bitte geben Sie Ihre Daten ein, damit wir Ihnen die Auswertung senden können.
                   </p>
                 </div>
 
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-4 h-6 w-6 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setEmailError('');
-                    }}
-                    onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                    autoFocus
-                    placeholder="name@beispiel.de"
-                    className={cn(
-                        "w-full pl-12 pr-4 py-4 text-lg bg-slate-50 border-2 rounded-xl focus:outline-none transition-all duration-200",
-                        emailError 
-                            ? "border-red-300 focus:border-red-500 bg-red-50/50 text-red-900 placeholder:text-red-300" 
-                            : "border-slate-100 focus:border-blue-600 focus:bg-white text-slate-900"
-                    )}
-                  />
+                <div className="space-y-4">
+                  {/* Title (Anrede) */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Anrede <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={title}
+                      onChange={(e) => {
+                        setTitle(e.target.value as 'Herr' | 'Frau' | '');
+                        setEmailError('');
+                      }}
+                      className={cn(
+                        "w-full px-4 py-3 text-lg bg-slate-50 border-2 rounded-xl focus:outline-none transition-all duration-200",
+                        emailError && !title
+                          ? "border-red-300 focus:border-red-500 bg-red-50/50" 
+                          : "border-slate-100 focus:border-blue-600 focus:bg-white text-slate-900"
+                      )}
+                    >
+                      <option value="">Bitte wählen...</option>
+                      <option value="Herr">Herr</option>
+                      <option value="Frau">Frau</option>
+                    </select>
+                  </div>
+
+                  {/* First Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Vorname <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => {
+                        setFirstName(e.target.value);
+                        setEmailError('');
+                      }}
+                      placeholder="Max"
+                      className={cn(
+                        "w-full px-4 py-3 text-lg bg-slate-50 border-2 rounded-xl focus:outline-none transition-all duration-200",
+                        emailError && !firstName.trim()
+                          ? "border-red-300 focus:border-red-500 bg-red-50/50 text-red-900 placeholder:text-red-300" 
+                          : "border-slate-100 focus:border-blue-600 focus:bg-white text-slate-900"
+                      )}
+                    />
+                  </div>
+
+                  {/* Last Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Nachname <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => {
+                        setLastName(e.target.value);
+                        setEmailError('');
+                      }}
+                      placeholder="Mustermann"
+                      className={cn(
+                        "w-full px-4 py-3 text-lg bg-slate-50 border-2 rounded-xl focus:outline-none transition-all duration-200",
+                        emailError && !lastName.trim()
+                          ? "border-red-300 focus:border-red-500 bg-red-50/50 text-red-900 placeholder:text-red-300" 
+                          : "border-slate-100 focus:border-blue-600 focus:bg-white text-slate-900"
+                      )}
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-4 h-6 w-6 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      E-Mail-Adresse <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setEmailError('');
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                      placeholder="name@beispiel.de"
+                      className={cn(
+                          "w-full pl-12 pr-4 py-3 text-lg bg-slate-50 border-2 rounded-xl focus:outline-none transition-all duration-200",
+                          emailError 
+                              ? "border-red-300 focus:border-red-500 bg-red-50/50 text-red-900 placeholder:text-red-300" 
+                              : "border-slate-100 focus:border-blue-600 focus:bg-white text-slate-900"
+                      )}
+                    />
+                  </div>
+
                   {emailError && (
-                    <div className="absolute -bottom-6 left-0 flex items-center gap-1 text-sm text-red-500 font-medium animate-in slide-in-from-top-1">
+                    <div className="flex items-center gap-1 text-sm text-red-500 font-medium animate-in slide-in-from-top-1">
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500"></span>
                         {emailError}
                     </div>
                   )}
                 </div>
 
-                <div className="pt-8 flex gap-4">
+                <div className="pt-4 flex gap-4">
                   <Button
                     variant="ghost"
                     size="lg"

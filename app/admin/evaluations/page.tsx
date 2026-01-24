@@ -137,8 +137,8 @@ export default function EvaluationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {evaluations.length > 0 ? (
-                evaluations.map((evaluation) => (
+            {evaluations.length > 0 ? (
+    evaluations.map((evaluation) => (
                   <tr 
                     key={evaluation.id} 
                     className="group transition-colors hover:bg-slate-50/80"
@@ -196,7 +196,7 @@ export default function EvaluationsPage() {
                   </tr>
                 ))
               ) : (
-                <tr>
+                <tr key="empty">
                   <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-400">
                         <div className="mb-3 rounded-full bg-slate-50 p-4">

@@ -39,9 +39,26 @@ export async function POST(request: NextRequest) {
       .eq('submission_id', submissionId)
       .single()
 
+    // Fetch submission to get user info for proper greeting
+    const { data: submissionData } = await supabase
+      .from('quiz_submissions')
+      .select('title, first_name, last_name')
+      .eq('id', submissionId)
+      .single()
+
     const totalScore = cached?.total_score ?? score
     const byCategory = (cached?.section_scores as any)?.byCategory as Record<string, number> | undefined
     const recommendationText = cached?.recommendations as string | undefined
+
+    // Generate proper German greeting
+    const title = submissionData?.title || null
+    const firstName = submissionData?.first_name || null
+    const lastName = submissionData?.last_name || null
+    const greeting = title && lastName
+      ? `Sehr ${title === 'Herr' ? 'geehrter' : 'geehrte'} ${lastName}`
+      : firstName
+        ? `Hallo ${firstName}`
+        : 'Hallo'
 
     const categoryHtml = byCategory
       ? `
@@ -88,7 +105,7 @@ export async function POST(request: NextRequest) {
               <h1>Fit4Sale – Vorläufige Auswertung</h1>
             </div>
             <div class="content">
-              <p>Hallo,</p>
+              <p>${greeting},</p>
               <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check. Wir haben Ihre Angaben ausgewertet und eine vorläufige Auswertung erstellt.</p>
               
               <div class="score-card">

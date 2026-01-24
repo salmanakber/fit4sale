@@ -11,6 +11,7 @@ export interface SubmissionConfirmationData {
 }
 
 export interface EvaluationEmailData {
+  greeting?: string // Optional: if provided, use this instead of patientName
   patientName: string
   patientEmail: string
   recommendedProgram: string
@@ -108,8 +109,10 @@ export function generateEvaluationEmail(
     .map((rec) => `<li>${rec}</li>`)
     .join('')
 
+  const greeting = data.greeting || `Hallo ${data.patientName}`
+  
   const text = `
-Hallo ${data.patientName},
+${greeting},
 
 Ihre Fit4Sale-Auswertung ist bereit (freigegeben). Hier sind Ihre Ergebnisse:
 
@@ -156,7 +159,7 @@ KMU-Beratungen
     </div>
     
     <div class="content">
-      <p>Hallo <strong>${data.patientName}</strong>,</p>
+      <p>${data.greeting || `Hallo <strong>${data.patientName}</strong>`},</p>
       
       <p>Ihre Fit4Sale-Auswertung ist bereit (freigegeben). Hier sind Ihre Ergebnisse:</p>
       

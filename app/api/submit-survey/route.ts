@@ -85,12 +85,33 @@ function generateRecommendations(score: number): string {
   }
 }
 
+function generateGermanGreeting(title: string | null, firstName: string | null, lastName: string | null): string {
+  // Formal: "Sehr geehrte(r) [Title] [Last Name]"
+  if (title && lastName) {
+    const titleText = title === 'Herr' ? 'geehrter' : 'geehrte'
+    return `Sehr ${titleText} ${lastName}`
+  }
+  // Informal: "Hallo [First Name]"
+  if (firstName) {
+    return `Hallo ${firstName}`
+  }
+  // Fallback
+  return 'Hallo'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const participantEmail = body.participant_email
-    const participantName = body.participant_name
+    const title = body.title || null // 'Herr' | 'Frau' | null
+    const firstName = body.first_name || null
+    const lastName = body.last_name || null
     const answers = body.answers || body
+
+    // Construct full name for backward compatibility
+    const participantName = firstName && lastName 
+      ? `${firstName} ${lastName}`.trim()
+      : body.participant_name || null
 
     console.log(body)
 
@@ -148,6 +169,9 @@ export async function POST(request: NextRequest) {
         patient_name: participantName || null,
         patient_email: participantEmail,
         participant_email: participantEmail,
+        title: title,
+        first_name: firstName,
+        last_name: lastName,
         answers: answers,
         submitted_at: new Date().toISOString(),
         partial_evaluation_sent: false,
@@ -233,7 +257,7 @@ export async function POST(request: NextRequest) {
                 <h1>Fit4Sale – Vorläufige Auswertung</h1>
               </div>
               <div class="content">
-                <p>Hallo${participantName ? ` ${participantName}` : ''},</p>
+                <p>${generateGermanGreeting(title, firstName, lastName)},</p>
                 <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check. Wir haben Ihre Angaben ausgewertet und eine vorläufige Auswertung erstellt.</p>
                 
                 <div class="score-card">
@@ -315,7 +339,7 @@ export async function POST(request: NextRequest) {
                 <h1>Fit4Sale – Eingabe erhalten</h1>
               </div>
               <div class="content">
-                <p>Hallo${participantName ? ` ${participantName}` : ''},</p>
+                <p>${generateGermanGreeting(title, firstName, lastName)},</p>
                 <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check.</p>
                 <p><strong>Ihre Eingabenummer:</strong> ${submissionId}</p>
                 <p>Sie erhalten eine <strong>vorläufige Auswertung</strong> automatisch per E-Mail. Die <strong>vollständige Auswertung</strong> wird nach manueller Freigabe versendet.</p>

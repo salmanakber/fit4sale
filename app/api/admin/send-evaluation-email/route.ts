@@ -74,6 +74,22 @@ export async function POST(request: NextRequest) {
     const submission = evaluation.quiz_submissions as any
     const patientName = submission?.patient_name || 'Teilnehmer/in'
     const patientEmail = submission?.patient_email || submission?.participant_email
+    
+    // Fetch full user info for proper greeting
+    const { data: submissionData } = await supabase
+      .from('quiz_submissions')
+      .select('title, first_name, last_name')
+      .eq('id', evaluation.submission_id)
+      .single()
+    
+    const title = submissionData?.title || null
+    const firstName = submissionData?.first_name || null
+    const lastName = submissionData?.last_name || null
+    const greeting = title && lastName
+      ? `Sehr ${title === 'Herr' ? 'geehrter' : 'geehrte'} ${lastName}`
+      : firstName
+        ? `Hallo ${firstName}`
+        : 'Hallo'
 
     if (!patientEmail) {
       return NextResponse.json(
@@ -89,8 +105,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate email template
+    // Generate email template with proper greeting
     const emailTemplate = generateEvaluationEmail({
+      greeting,
       patientName,
       patientEmail,
       recommendedProgram: evaluation.recommended_program || '',
