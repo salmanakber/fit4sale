@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 
 interface Submission {
   id: string
-  patient_name: string
+  patient_name: string | null
   patient_email: string | null
   participant_email: string | null
   partial_evaluation_sent?: boolean | null
@@ -29,8 +29,6 @@ export default function SubmissionsPage() {
         const response = await fetch('/api/admin/submissions')
         if (response.ok) {
           const data = await response.json()
-
-          console.log("data inside ", data)
           setSubmissions(data.submissions || [])
           setFilteredSubmissions(data.submissions || [])
         }
@@ -44,12 +42,12 @@ export default function SubmissionsPage() {
     fetchSubmissions()
   }, [])
 
-  console.log("submission outsode ", submissions)
-
   useEffect(() => {
-    const filtered = submissions?.filter(
+    const filtered = submissions.filter(
       (submission) =>
-        submission.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (submission.patient_name || '')
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         (submission.patient_email || submission.participant_email || '')
           .toLowerCase()
           .includes(searchQuery.toLowerCase())
