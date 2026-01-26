@@ -164,7 +164,7 @@ export default function AdminDashboard() {
             <h3 className="font-semibold text-slate-700">E-Mail Versand</h3>
             <span className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full font-medium">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                System Aktiv
+                System Aktiv. 
             </span>
           </div>
           <p className="text-sm text-slate-500">
