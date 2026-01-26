@@ -158,41 +158,6 @@ export default function AdminDashboard() {
       </div>
 
 
-      <div className="border-t pt-8">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Link href="/admin/quiz">
-            <Button className="w-full justify-start h-auto p-4 bg-transparent" variant="outline">
-              <div>
-                <div className="font-semibold text-foreground">Manage Quiz</div>
-                <p className="text-sm text-muted-foreground">
-                  Edit questions, answer options, and intro screen
-                </p>
-              </div>
-            </Button>
-          </Link>
-          <Link href="/admin/submissions">
-            <Button className="w-full justify-start h-auto p-4 bg-transparent" variant="outline">
-              <div>
-                <div className="font-semibold text-foreground">View Submissions</div>
-                <p className="text-sm text-muted-foreground">
-                  Review quiz responses from users
-                </p>
-              </div>
-            </Button>
-          </Link>
-          <Link href="/admin/evaluations">
-            <Button className="w-full justify-start h-auto p-4 bg-transparent" variant="outline">
-              <div>
-                <div className="font-semibold text-foreground">Manage Reports</div>
-                <p className="text-sm text-muted-foreground">
-                  Review, approve, and send sales reports
-                </p>
-              </div>
-            </Button>
-          </Link>
-        </div>
-
       {/* Recent Activity Placeholder (Optional Polish) */}
       <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -205,7 +170,6 @@ export default function AdminDashboard() {
           <p className="text-sm text-slate-500">
              Vorläufige E-Mails gesendet: <span className="font-semibold text-slate-800">{stats.partialEmailsSent}</span> · Vollständige E-Mails gesendet: <span className="font-semibold text-slate-800">{stats.fullEmailsSent}</span>
           </p>
-
       </div>
 
     </div>
