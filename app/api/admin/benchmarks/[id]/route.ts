@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  
+    { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies()
@@ -33,6 +34,8 @@ export async function PUT(
       }
     )
 
+        const { id } = await params
+
     const { data, error } = await supabase
       .from('benchmarks')
       .update({
@@ -43,7 +46,7 @@ export async function PUT(
         category: category || null,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
 
     if (error) throw error
@@ -60,7 +63,8 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  
+   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies()
@@ -85,11 +89,11 @@ export async function DELETE(
         },
       }
     )
-
+    const { id } = await params
     const { error } = await supabase
       .from('benchmarks')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) throw error
 
