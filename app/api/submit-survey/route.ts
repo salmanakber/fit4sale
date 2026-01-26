@@ -514,5 +514,5 @@ const emailResult = await sendResendEmail({
       { error: 'Internal server error' },
       { status: 500 }
     )
-  }
+  };
 }
