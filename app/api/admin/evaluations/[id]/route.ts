@@ -48,6 +48,8 @@ export async function GET(
       )
     }
 
+    console.log(id)
+
     // Fetch the evaluation with related submission
     const { data: evaluation, error } = await supabase
       .from('evaluation_results')
@@ -59,6 +61,9 @@ export async function GET(
       )
       .eq('id', id)
       .maybeSingle()
+
+      console.log('query data', evaluation)
+      console.log('query error', error)
 
     // Handle "no rows found" error (PGRST116) or other errors
     if (error && error.code !== 'PGRST116') {
