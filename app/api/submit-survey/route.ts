@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
           setAll(cookiesToSet: any[]) {
             try {
               cookiesToSet.forEach(({ name, value, options }: any) =>
-              ;(cookiesToSet as any[]).forEach(({ name, value, options }: any) =>
+              (cookiesToSet as any[]).forEach(({ name, value, options }: any) =>
                 cookieStore.set(name, value, options)
               )
             } catch (error) {
