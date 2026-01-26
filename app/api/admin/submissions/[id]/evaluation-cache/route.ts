@@ -1,0 +1,51 @@
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const cookieStore = await cookies()
+    const adminSession = cookieStore.get('admin_session')
+
+    if (!adminSession?.value) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = await params
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet: any[]) {
+            cookiesToSet.forEach(({ name, value, options }: any) =>
+              cookieStore.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+
+    const { data, error } = await supabase
+      .from('evaluation_results_cache')
+      .select('total_score, total_benchmark_score, total_achieved_score, overall_deviation, section_scores, question_breakdown, recommendations, updated_at')
+      .eq('submission_id', id)
+      .single()
+
+    if (error || !data) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ cache: data }, { status: 200 })
+  } catch (error) {
+    console.error('[v0] Error fetching evaluation cache:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
