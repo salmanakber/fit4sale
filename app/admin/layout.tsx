@@ -92,6 +92,8 @@ export default function AdminLayout({
     { name: 'Quiz-Verwaltung', href: '/admin/quiz', icon: FileText },
     { name: 'Eingaben', href: '/admin/submissions', icon: Inbox },
     { name: 'Auswertungen', href: '/admin/evaluations', icon: BarChart3 },
+    { name: 'die Benchmark', href: '/admin/benchmarks', icon: BarChart3 },
+
   ]
 
   return (
