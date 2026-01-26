@@ -252,7 +252,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
           <div className="p-6 md:p-10 lg:p-12">
             
             {/* --- SCREEN 1: INTRO --- */}
-            {isIntro && (
+            {isIntro ? (
               <div className="flex flex-col items-center text-center space-y-8 animate-in zoom-in-95 duration-500">
                 <div className="space-y-4 max-w-lg">
                   <h1 className="text-3xl md:text-5xl font-bold text-blue-950 tracking-tight leading-tight">
@@ -296,7 +296,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                     </Button>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* --- SCREEN 2: CONTACT FORM --- */}
             {isContactStep && (
