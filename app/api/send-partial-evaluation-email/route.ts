@@ -140,9 +140,6 @@ export async function POST(request: NextRequest) {
     const emailResult = await sendResendEmail({
       to: participantEmail,
       subject,
-    const emailResult = await sendResendEmail({
-      to: participantEmail,
-      subject: 'Fit4Sale – Vorläufige Auswertung',
       html,
     })
 

@@ -106,13 +106,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (!emailResult.success) {
-    const emailSent = await sendResendEmail({
-      to: body.customerEmail,
-      subject: 'Fit4Sale – Umfrage eingereicht',
-      html,
-    })
-
-    if (!emailSent.success) {
       console.error('[v0] Failed to send email to:', body.customerEmail)
       return NextResponse.json(
         { error: emailResult.error || 'Failed to send email' },

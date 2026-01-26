@@ -153,13 +153,6 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
 
 function generateRecommendations(score: number): string {
   if (score >= 80) {
-    return 'Sehr gut: Ihr Vertrieb ist stark aufgestellt – gezielte Optimierungen bringen schnell Wirkung.'
-  } else if (score >= 60) {
-    return 'Gut: Solide Basis – mit klaren Maßnahmen steigern Sie Abschlussquote und Prozessqualität.'
-  } else if (score >= 40) {
-    return 'Mittel: Es gibt mehrere Hebel – strukturierte Schritte erhöhen Konsistenz und Conversion.'
-  } else {
-    return 'Ausbaufähig: Wir empfehlen, Angebot/Zielgruppe/Prozess zuerst sauber zu definieren und zu standardisieren.'
     return 'Sehr gute Verkaufs-Readiness: Sie sind gut positioniert – nächste Optimierungen bringen schnell messbare Effekte.'
   } else if (score >= 60) {
     return 'Gute Verkaufs-Readiness: Solide Basis – mit gezielten Anpassungen lässt sich der Abschluss- und Lead-Flow verbessern.'
@@ -220,7 +213,6 @@ export async function POST(request: NextRequest) {
           },
           setAll(cookiesToSet: any[]) {
             try {
-              ;(cookiesToSet as any[]).forEach(({ name, value, options }: any) =>
               cookiesToSet.forEach(({ name, value, options }: any) =>
                 cookieStore.set(name, value, options)
               )
@@ -287,8 +279,6 @@ export async function POST(request: NextRequest) {
     // Send partial evaluation email automatically (direct Resend call + audit log)
     try {
       // Load cached evaluation details for richer email content (category breakdown + recommendation)
-    // Send partial report email automatically (direct call, no internal HTTP)
-    try {
       const { data: cached } = await supabase
         .from('evaluation_results_cache')
         .select('total_score, section_scores, recommendations')
@@ -304,7 +294,6 @@ export async function POST(request: NextRequest) {
       const categoryHtml = byCategory
         ? `
           <div style="margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0;">Teilbereiche</h3>
             <h3 style="margin: 0 0 10px 0;">Bereiche</h3>
             <table style="width: 100%; border-collapse: collapse;">
               ${Object.entries(byCategory)
@@ -333,9 +322,6 @@ export async function POST(request: NextRequest) {
             <style>
               body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
               .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background-color: #0B1120; color: white; padding: 20px; text-align: center; border-radius: 8px; }
-              .score-card { background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
-              .score { font-size: 48px; font-weight: bold; color: #0B1120; }
               .header { background-color: #0f4c5c; color: white; padding: 20px; text-align: center; border-radius: 8px; }
               .score-card { background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
               .score { font-size: 48px; font-weight: bold; color: #0f4c5c; }
@@ -351,9 +337,6 @@ export async function POST(request: NextRequest) {
               <div class="content">
                 <p>${generateGermanGreeting(title, firstName, lastName)},</p>
                 <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check. Wir haben Ihre Angaben ausgewertet und eine vorläufige Auswertung erstellt.</p>
-                
-                <p>Hallo,</p>
-                <p>vielen Dank für Ihre Teilnahme an unserer Sales-Umfrage. Wir haben Ihre Antworten ausgewertet und eine vorläufige Einschätzung erstellt.</p>
 
                 <div class="score-card">
                   <p>Ihr Score:</p>
@@ -371,13 +354,9 @@ export async function POST(request: NextRequest) {
                 <p>Freundliche Grüße<br>KMU-Beratungen</p>
               </div>
               <div class="footer">
-                <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
                 <p>Wir prüfen Ihre vollständige Auswertung manuell und senden Ihnen anschließend die detaillierte Auswertung per E-Mail.</p>
-
                 <p>Fragen? Schreiben Sie uns an aschwanden@kmu-beratungen.ch</p>
                 <p>Mit freundlichen Grüßen,<br />KMU-Beratungen</p>
-              </div>
-              <div class="footer">
                 <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht direkt auf diese E-Mail.</p>
               </div>
             </div>
@@ -415,36 +394,7 @@ export async function POST(request: NextRequest) {
           ? `Vorläufige Auswertung per E-Mail versendet (${participantEmail})`
           : `Fehler beim Versand der vorläufigen Auswertung (${participantEmail})`,
         submission_id: submissionId,
-      const emailResult = await sendResendEmail({
-        to: participantEmail,
-        subject: 'Fit4Sale – Vorläufige Auswertung',
-        html,
       })
-
-      if (!emailResult.success) {
-        console.error('[v0] Failed to send partial email:', emailResult.error)
-      } else {
-        await supabase
-          .from('quiz_submissions')
-          .update({ partial_evaluation_sent: true })
-          .eq('id', submissionId)
-
-        await supabase.from('email_audit_logs').insert({
-          submission_id: submissionId,
-          recipient_email: participantEmail,
-          email_type: 'partial',
-          subject: 'Fit4Sale – Vorläufige Auswertung',
-          sender_email: 'aschwanden@kmu-beratungen.ch',
-          status: 'sent',
-          admin_notified: true,
-        })
-
-        await supabase.from('admin_logs').insert({
-          admin_id: null,
-          action: `Partial report email sent to participant (${participantEmail})`,
-          submission_id: submissionId,
-        })
-      }
     } catch (emailError) {
       console.error('[v0] Error sending partial email:', emailError)
     }
@@ -508,7 +458,6 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         message: 'Eingabe erfolgreich. Vorläufige Auswertung wurde per E-Mail versendet.',
-        message: 'Survey submitted successfully. A partial report email has been sent.',
         submissionId,
         evaluation,
       },
