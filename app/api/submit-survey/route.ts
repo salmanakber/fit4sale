@@ -207,28 +207,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Supabase client
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet: any[]) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }: any) =>
-              (cookiesToSet as any[]).forEach(({ name, value, options }: any) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch (error) {
-              console.error('[v0] Error setting cookies:', error)
-            }
-          }
+  const cookieStore = await cookies();
+const supabase = createServerClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet: any[]) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }: any) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch (error) {
+          console.error('[v0] Error setting cookies:', error);
         }
-      }
-    )
+      },
+    },
+  }
+);
+
 
     // Insert quiz submission with email
     // Prevent accidental duplicate spam (same email submitted repeatedly)
