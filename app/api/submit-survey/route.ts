@@ -508,11 +508,11 @@ const emailResult = await sendResendEmail({
       },
       { status: 201 }
     )
-  } catch (error) {
+  }   } catch (error) {
     console.error('[v0] Error processing survey:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
-  };
-};
+  }
+}
