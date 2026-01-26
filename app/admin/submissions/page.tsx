@@ -109,7 +109,6 @@ export default function SubmissionsPage() {
   }
 
   return (
-<<<<<<< HEAD
     <div className="space-y-6">
       {/* Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -123,13 +122,11 @@ export default function SubmissionsPage() {
            <span className="bg-white px-3 py-1 rounded-md shadow-sm border border-slate-200 text-sm font-medium text-slate-600">
              Total: <span className="text-blue-600">{filteredSubmissions.length}</span>
            </span>
-=======
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-foreground">Survey Entries</h2>
         <div className="text-sm text-muted-foreground">
           Total: {filteredSubmissions.length}
->>>>>>> 50dc961 (Final updates 24-jan)
         </div>
       </div>
 
@@ -147,7 +144,6 @@ export default function SubmissionsPage() {
         </div>
       </div>
 
-<<<<<<< HEAD
       {/* Main Table Card */}
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -242,7 +238,6 @@ export default function SubmissionsPage() {
                        <p className="text-lg font-medium text-slate-900">Keine Eingaben gefunden</p>
                        <p className="text-sm">Bitte überprüfen Sie Ihre Sucheinstellungen.</p>
                     </div>
-=======
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full">
           <thead className="border-b border-border bg-secondary">
@@ -293,7 +288,6 @@ export default function SubmissionsPage() {
                     >
                       View Details
                     </Link>
->>>>>>> 50dc961 (Final updates 24-jan)
                   </td>
                 </tr>
               )}

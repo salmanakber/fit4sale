@@ -36,11 +36,8 @@ export async function GET() {
     if (!data) {
       return NextResponse.json({
         title: 'Fit4Sale Sales-Check',
-<<<<<<< HEAD
         description: 'Beantworten Sie ein paar Fragen zu Ihrem Vertrieb – Sie erhalten eine vorläufige Auswertung per E-Mail.',
-=======
         description: 'Beantworten Sie ein paar Fragen zu Ihrem Sales-Prozess – Sie erhalten eine vorläufige Auswertung per E-Mail.',
->>>>>>> 50dc961 (Final updates 24-jan)
         estimated_time: '8-10 minutes',
         button_text: 'Start',
       });

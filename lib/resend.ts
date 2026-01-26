@@ -4,13 +4,10 @@ export async function sendResendEmail(args: {
   html: string
   from?: string
 }) {
-<<<<<<< HEAD
   // Resend expects a verified sender. It's safest to use "Name <email@domain>" format.
   // See: https://resend.com/docs/send-with-nextjs
   const from = args.from || 'KMU-Beratungen <aschwanden@kmu-beratungen.ch>'
-=======
   const from = args.from || 'aschwanden@kmu-beratungen.ch'
->>>>>>> 50dc961 (Final updates 24-jan)
 
   if (!process.env.RESEND_API_KEY) {
     console.error('[v0] RESEND_API_KEY not configured')
@@ -32,7 +29,6 @@ export async function sendResendEmail(args: {
       }),
     })
 
-<<<<<<< HEAD
     const payload = await response.json().catch(() => null)
     console.log('[v0] Resend API response status:', response.status, payload)
 
@@ -46,16 +42,11 @@ export async function sendResendEmail(args: {
     }
 
     return { success: true as const, data: payload }
-=======
     console.log('[v0] Resend API response status:', response.status)
     return { success: response.ok as const }
->>>>>>> 50dc961 (Final updates 24-jan)
   } catch (error) {
     console.error('[v0] Error sending email with Resend:', error)
     return { success: false as const, error: String(error) }
   }
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> 50dc961 (Final updates 24-jan)

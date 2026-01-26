@@ -153,7 +153,6 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
 
 function generateRecommendations(score: number): string {
   if (score >= 80) {
-<<<<<<< HEAD
     return 'Sehr gut: Ihr Vertrieb ist stark aufgestellt – gezielte Optimierungen bringen schnell Wirkung.'
   } else if (score >= 60) {
     return 'Gut: Solide Basis – mit klaren Maßnahmen steigern Sie Abschlussquote und Prozessqualität.'
@@ -161,7 +160,6 @@ function generateRecommendations(score: number): string {
     return 'Mittel: Es gibt mehrere Hebel – strukturierte Schritte erhöhen Konsistenz und Conversion.'
   } else {
     return 'Ausbaufähig: Wir empfehlen, Angebot/Zielgruppe/Prozess zuerst sauber zu definieren und zu standardisieren.'
-=======
     return 'Sehr gute Verkaufs-Readiness: Sie sind gut positioniert – nächste Optimierungen bringen schnell messbare Effekte.'
   } else if (score >= 60) {
     return 'Gute Verkaufs-Readiness: Solide Basis – mit gezielten Anpassungen lässt sich der Abschluss- und Lead-Flow verbessern.'
@@ -169,7 +167,6 @@ function generateRecommendations(score: number): string {
     return 'Mittlere Verkaufs-Readiness: Es gibt klare Hebel – strukturierte Maßnahmen erhöhen Conversion und Konsistenz.'
   } else {
     return 'Niedrige Verkaufs-Readiness: Wir empfehlen, die Grundlagen (Angebot, Zielgruppe, Prozess) zuerst sauber zu definieren.'
->>>>>>> 50dc961 (Final updates 24-jan)
   }
 }
 
@@ -223,11 +220,8 @@ export async function POST(request: NextRequest) {
           },
           setAll(cookiesToSet: any[]) {
             try {
-<<<<<<< HEAD
               ;(cookiesToSet as any[]).forEach(({ name, value, options }: any) =>
-=======
               cookiesToSet.forEach(({ name, value, options }: any) =>
->>>>>>> 50dc961 (Final updates 24-jan)
                 cookieStore.set(name, value, options)
               )
             } catch (error) {
@@ -290,14 +284,11 @@ export async function POST(request: NextRequest) {
     // Calculate evaluation automatically
     const evaluation = await calculateEvaluation(supabase, submissionId, answers)
 
-<<<<<<< HEAD
     // Send partial evaluation email automatically (direct Resend call + audit log)
     try {
       // Load cached evaluation details for richer email content (category breakdown + recommendation)
-=======
     // Send partial report email automatically (direct call, no internal HTTP)
     try {
->>>>>>> 50dc961 (Final updates 24-jan)
       const { data: cached } = await supabase
         .from('evaluation_results_cache')
         .select('total_score, section_scores, recommendations')
@@ -313,11 +304,8 @@ export async function POST(request: NextRequest) {
       const categoryHtml = byCategory
         ? `
           <div style="margin: 20px 0;">
-<<<<<<< HEAD
             <h3 style="margin: 0 0 10px 0;">Teilbereiche</h3>
-=======
             <h3 style="margin: 0 0 10px 0;">Bereiche</h3>
->>>>>>> 50dc961 (Final updates 24-jan)
             <table style="width: 100%; border-collapse: collapse;">
               ${Object.entries(byCategory)
                 .map(
@@ -345,15 +333,12 @@ export async function POST(request: NextRequest) {
             <style>
               body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
               .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-<<<<<<< HEAD
               .header { background-color: #0B1120; color: white; padding: 20px; text-align: center; border-radius: 8px; }
               .score-card { background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
               .score { font-size: 48px; font-weight: bold; color: #0B1120; }
-=======
               .header { background-color: #0f4c5c; color: white; padding: 20px; text-align: center; border-radius: 8px; }
               .score-card { background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
               .score { font-size: 48px; font-weight: bold; color: #0f4c5c; }
->>>>>>> 50dc961 (Final updates 24-jan)
               .content { padding: 20px 0; }
               .footer { color: #666; font-size: 12px; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
             </style>
@@ -364,15 +349,12 @@ export async function POST(request: NextRequest) {
                 <h1>Fit4Sale – Vorläufige Auswertung</h1>
               </div>
               <div class="content">
-<<<<<<< HEAD
                 <p>${generateGermanGreeting(title, firstName, lastName)},</p>
                 <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check. Wir haben Ihre Angaben ausgewertet und eine vorläufige Auswertung erstellt.</p>
                 
-=======
                 <p>Hallo,</p>
                 <p>vielen Dank für Ihre Teilnahme an unserer Sales-Umfrage. Wir haben Ihre Antworten ausgewertet und eine vorläufige Einschätzung erstellt.</p>
 
->>>>>>> 50dc961 (Final updates 24-jan)
                 <div class="score-card">
                   <p>Ihr Score:</p>
                   <div class="score">${totalScore}/100</div>
@@ -382,7 +364,6 @@ export async function POST(request: NextRequest) {
                 ${categoryHtml}
 
                 <p><strong>Nächste Schritte:</strong></p>
-<<<<<<< HEAD
                 <p>Die vollständige Auswertung wird nach manueller Freigabe per E-Mail versendet.</p>
                 
                 <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
@@ -391,7 +372,6 @@ export async function POST(request: NextRequest) {
               </div>
               <div class="footer">
                 <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
-=======
                 <p>Wir prüfen Ihre vollständige Auswertung manuell und senden Ihnen anschließend die detaillierte Auswertung per E-Mail.</p>
 
                 <p>Fragen? Schreiben Sie uns an aschwanden@kmu-beratungen.ch</p>
@@ -399,14 +379,12 @@ export async function POST(request: NextRequest) {
               </div>
               <div class="footer">
                 <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht direkt auf diese E-Mail.</p>
->>>>>>> 50dc961 (Final updates 24-jan)
               </div>
             </div>
           </body>
         </html>
       `
 
-<<<<<<< HEAD
       const subject = 'Fit4Sale – Vorläufige Auswertung'
       const emailResult = await sendResendEmail({
         to: participantEmail,
@@ -437,12 +415,10 @@ export async function POST(request: NextRequest) {
           ? `Vorläufige Auswertung per E-Mail versendet (${participantEmail})`
           : `Fehler beim Versand der vorläufigen Auswertung (${participantEmail})`,
         submission_id: submissionId,
-=======
       const emailResult = await sendResendEmail({
         to: participantEmail,
         subject: 'Fit4Sale – Vorläufige Auswertung',
         html,
->>>>>>> 50dc961 (Final updates 24-jan)
       })
 
       if (!emailResult.success) {
@@ -531,11 +507,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-<<<<<<< HEAD
         message: 'Eingabe erfolgreich. Vorläufige Auswertung wurde per E-Mail versendet.',
-=======
         message: 'Survey submitted successfully. A partial report email has been sent.',
->>>>>>> 50dc961 (Final updates 24-jan)
         submissionId,
         evaluation,
       },

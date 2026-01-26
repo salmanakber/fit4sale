@@ -115,7 +115,6 @@ export default function AdminLayout({
           </Link>
         </div>
 
-<<<<<<< HEAD
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-8 space-y-2">
           <p className="px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">
@@ -141,7 +140,6 @@ export default function AdminLayout({
               </Link>
             )
           })}
-=======
         <nav className="space-y-1 p-4 flex-1">
           <Link href="/admin/dashboard" className="block rounded-lg px-4 py-2 hover:bg-background">
             Dashboard
@@ -155,7 +153,6 @@ export default function AdminLayout({
           <Link href="/admin/evaluations" className="block rounded-lg px-4 py-2 hover:bg-background">
             Reports
           </Link>
->>>>>>> 50dc961 (Final updates 24-jan)
         </nav>
 
         {/* Footer / User Profile */}

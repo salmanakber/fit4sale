@@ -28,7 +28,6 @@ export function generateSubmissionConfirmationEmail(
   const text = `
 Hallo ${data.patientName},
 
-<<<<<<< HEAD
 vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check.
 
 Wir haben Ihre Angaben erhalten.
@@ -36,7 +35,6 @@ Wir haben Ihre Angaben erhalten.
 Wie geht es weiter?
 - Wir erstellen automatisch eine **vorläufige Auswertung** auf Basis definierter Benchmarks
 - Die **vollständige Auswertung** wird nach **manueller Freigabe** versendet
-=======
 Thank you for completing the Fit4Sale sales survey!
 
 We have received your submission and our team is reviewing your responses. 
@@ -45,17 +43,13 @@ What happens next?
 - We will analyze your answers against predefined benchmarks
 - You will receive a preliminary report automatically
 - The full report will be sent after manual approval
->>>>>>> 50dc961 (Final updates 24-jan)
 
 Ihre Eingabenummer: ${data.submissionId}
 
 Bei Fragen erreichen Sie uns unter aschwanden@kmu-beratungen.ch
 
-<<<<<<< HEAD
 Freundliche Grüße
-=======
 Best regards,
->>>>>>> 50dc961 (Final updates 24-jan)
 KMU-Beratungen
   `.trim()
 
@@ -76,36 +70,27 @@ KMU-Beratungen
   <div class="container">
     <div class="header">
       <h1>Fit4Sale</h1>
-<<<<<<< HEAD
       <p>Sales-Check erfolgreich eingereicht</p>
-=======
       <p>Your Sales Survey Was Submitted Successfully</p>
->>>>>>> 50dc961 (Final updates 24-jan)
     </div>
     
     <div class="content">
       <p>Hallo <strong>${data.patientName}</strong>,</p>
       
-<<<<<<< HEAD
       <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check.</p>
       
       <p>Wir haben Ihre Angaben erhalten.</p>
-=======
       <p>Thank you for completing the Fit4Sale sales survey!</p>
       
       <p>We have received your submission and our team is reviewing your responses.</p>
->>>>>>> 50dc961 (Final updates 24-jan)
       
       <h3>Wie geht es weiter?</h3>
       <ul>
-<<<<<<< HEAD
         <li>Wir erstellen automatisch eine <strong>vorläufige Auswertung</strong> anhand definierter Benchmarks</li>
         <li>Die <strong>vollständige Auswertung</strong> wird nach <strong>manueller Freigabe</strong> versendet</li>
-=======
         <li>We will analyze your answers against predefined benchmarks</li>
         <li>You will receive a preliminary report automatically</li>
         <li>The full report will be sent after manual approval</li>
->>>>>>> 50dc961 (Final updates 24-jan)
       </ul>
       
       <div class="highlight">
@@ -114,11 +99,8 @@ KMU-Beratungen
       
       <p>Bei Fragen erreichen Sie uns unter aschwanden@kmu-beratungen.ch</p>
       
-<<<<<<< HEAD
       <p>Freundliche Grüße<br>KMU-Beratungen</p>
-=======
       <p>Best regards,<br>KMU-Beratungen</p>
->>>>>>> 50dc961 (Final updates 24-jan)
     </div>
     
     <div class="footer">
@@ -130,11 +112,8 @@ KMU-Beratungen
   `.trim()
 
   return {
-<<<<<<< HEAD
     subject: 'Fit4Sale – Sales-Check eingereicht',
-=======
     subject: 'Fit4Sale – Survey submitted',
->>>>>>> 50dc961 (Final updates 24-jan)
     html,
     text,
   }
@@ -153,7 +132,6 @@ export function generateEvaluationEmail(
   const text = `
 ${greeting},
 
-<<<<<<< HEAD
 Ihre Fit4Sale-Auswertung ist bereit (freigegeben). Hier sind Ihre Ergebnisse:
 
 Zusammenfassung: ${data.recommendedProgram}
@@ -172,7 +150,6 @@ Nächste Schritte:
 3. Bei Rückfragen: aschwanden@kmu-beratungen.ch
 
 Freundliche Grüße
-=======
 Your Fit4Sale report is ready. Here are your results:
 
 Summary: ${data.recommendedProgram}
@@ -192,7 +169,6 @@ Next Steps:
 4. Reach out to us if you have any questions
 
 Best regards,
->>>>>>> 50dc961 (Final updates 24-jan)
 KMU-Beratungen
   `.trim()
 
@@ -216,17 +192,13 @@ KMU-Beratungen
   <div class="container">
     <div class="header">
       <h1>Fit4Sale</h1>
-<<<<<<< HEAD
       <p>Ihre Auswertung</p>
-=======
       <p>Your Sales Report</p>
->>>>>>> 50dc961 (Final updates 24-jan)
     </div>
     
     <div class="content">
       <p>${data.greeting || `Hallo <strong>${data.patientName}</strong>`},</p>
       
-<<<<<<< HEAD
       <p>Ihre Fit4Sale-Auswertung ist bereit (freigegeben). Hier sind Ihre Ergebnisse:</p>
       
       <div class="info-box">
@@ -244,7 +216,6 @@ KMU-Beratungen
       
       <div class="recommendations">
         <div class="section-title">Empfehlungen</div>
-=======
       <p>Your Fit4Sale report is ready. Here are your results:</p>
       
       <div class="info-box">
@@ -262,14 +233,12 @@ KMU-Beratungen
       
       <div class="recommendations">
         <div class="section-title">Recommendations</div>
->>>>>>> 50dc961 (Final updates 24-jan)
         <ul>${recommendationsList}</ul>
       </div>
       
       <div class="section">
         <div class="section-title">Nächste Schritte</div>
         <ol>
-<<<<<<< HEAD
           <li>Priorisieren Sie 1–2 Hebel mit dem größten Effekt</li>
           <li>Setzen Sie die Empfehlungen um und messen Sie die Wirkung</li>
           <li>Bei Rückfragen: aschwanden@kmu-beratungen.ch</li>
@@ -277,7 +246,6 @@ KMU-Beratungen
       </div>
       
       <p>Freundliche Grüße<br>KMU-Beratungen</p>
-=======
           <li>Review the recommendations above</li>
           <li>Prioritize the biggest leverage items first</li>
           <li>Reply if you want to discuss the details</li>
@@ -286,7 +254,6 @@ KMU-Beratungen
       </div>
       
       <p>Best regards,<br>KMU-Beratungen</p>
->>>>>>> 50dc961 (Final updates 24-jan)
     </div>
     
     <div class="footer">
@@ -298,11 +265,8 @@ KMU-Beratungen
   `.trim()
 
   return {
-<<<<<<< HEAD
     subject: 'Fit4Sale – Vollständige Auswertung (freigegeben)',
-=======
     subject: 'Fit4Sale – Your report',
->>>>>>> 50dc961 (Final updates 24-jan)
     html,
     text,
   }

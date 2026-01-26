@@ -86,7 +86,6 @@ export default function EvaluationsPage() {
   }
 
   return (
-<<<<<<< HEAD
     <div className="space-y-6">
       
       {/* Page Header */}
@@ -138,7 +137,6 @@ export default function EvaluationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-=======
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-foreground">Reports</h2>
@@ -175,7 +173,6 @@ export default function EvaluationsPage() {
             </tr>
           </thead>
           <tbody>
->>>>>>> 50dc961 (Final updates 24-jan)
             {evaluations.length > 0 ? (
     evaluations.map((evaluation) => (
                   <tr 

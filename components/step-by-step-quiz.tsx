@@ -37,10 +37,7 @@ interface IntroSettings {
   description: string;
   estimated_time: string;
   button_text?: string;
-<<<<<<< HEAD
-=======
   additional_text?: string;
->>>>>>> 50dc961 (Final updates 24-jan)
 }
 
 interface QuizData {
@@ -172,14 +169,11 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
   // --- Loading State ---
   if (loading || !quizData) {
     return (
-<<<<<<< HEAD
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-blue-900" />
         <p className="text-slate-500 font-medium">Lade Quiz...</p>
-=======
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-foreground">Umfrage wird geladen...</p>
->>>>>>> 50dc961 (Final updates 24-jan)
       </div>
     );
   }
@@ -233,7 +227,6 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
           </div>
         )}
 
-<<<<<<< HEAD
         {/* Main Card */}
         <Card className="overflow-hidden rounded-3xl border-0 shadow-2xl shadow-blue-900/5 bg-white">
           <div className="p-6 md:p-10 lg:p-12">
@@ -249,7 +242,6 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                     {quizData.intro.description}
                   </p>
                 </div>
-=======
         <Card className="p-8 md:p-12">
           {isIntro ? (
             // Intro Screen
@@ -271,14 +263,12 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   {quizData.intro.description}
                 </p>
               </div>
->>>>>>> 50dc961 (Final updates 24-jan)
 
                 <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-6 py-3 text-blue-800 font-semibold shadow-sm">
                   <Clock className="h-5 w-5" />
                   <span>{quizData.intro.estimated_time}</span>
                 </div>
 
-<<<<<<< HEAD
                 <div className="w-full max-w-xs pt-4">
                     <Button
                         onClick={handleNext}
@@ -288,7 +278,6 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                         {quizData.intro.button_text || "Jetzt Starten"}
                     </Button>
                 </div>
-=======
               <Button
                 onClick={handleNext}
                 size="lg"
@@ -307,7 +296,6 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                 <p className="text-foreground/70 mb-6">
                   Bitte geben Sie Ihre E-Mail-Adresse ein, damit wir Ihnen die Auswertung senden können.
                 </p>
->>>>>>> 50dc961 (Final updates 24-jan)
               </div>
             )}
 
@@ -323,7 +311,6 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   </p>
                 </div>
 
-<<<<<<< HEAD
                 <div className="space-y-5">
                   
                   {/* Title Selection */}
@@ -348,7 +335,6 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                           {option}
                         </div>
                       ))}
-=======
               <div className="flex gap-4 mt-8">
                 <Button
                   variant="outline"
@@ -436,7 +422,6 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                       >
                         {option.option_text}
                       </label>
->>>>>>> 50dc961 (Final updates 24-jan)
                     </div>
                     {formErrors.title && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.title}</p>}
                   </div>
@@ -513,11 +498,8 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                     onClick={handlePrevious}
                     className="h-14 px-6 text-slate-500 hover:text-slate-900 rounded-xl"
                   >
-<<<<<<< HEAD
                     Zurück
-=======
                     {submitting ? 'Wird eingereicht...' : 'Absenden'}
->>>>>>> 50dc961 (Final updates 24-jan)
                   </Button>
                   <Button 
                     onClick={handleNext} 
