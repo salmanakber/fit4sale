@@ -167,17 +167,15 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
   };
 
   // --- Loading State ---
-  if (loading || !quizData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-foreground">Umfrage wird geladen...</p>
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-900" />
-        <p className="text-slate-500 font-medium">Lade Quiz...</p>
-      </div>
-      </div>
-    );
-  }
+ if (loading || !quizData) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-4">
+      <Loader2 className="h-10 w-10 animate-spin text-blue-900" />
+      <p className="text-slate-500 font-medium">Lade Quiz...</p>
+    </div>
+  );
+}
+
 
   // --- Progress Logic ---
   const totalSteps = quizData.questions.length;
