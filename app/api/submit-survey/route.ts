@@ -160,7 +160,6 @@ function generateRecommendations(score: number): string {
     return 'Mittlere Verkaufs-Readiness: Es gibt klare Hebel – strukturierte Maßnahmen erhöhen Conversion und Konsistenz.'
   } else {
     return 'Niedrige Verkaufs-Readiness: Wir empfehlen, die Grundlagen (Angebot, Zielgruppe, Prozess) zuerst sauber zu definieren.'
-    return 'Sehr gut: Ihr Vertrieb ist stark aufgestellt – gezielte Optimierungen bringen schnell Wirkung.'
   } else if (score >= 60) {
     return 'Gut: Solide Basis – mit klaren Maßnahmen steigern Sie Abschlussquote und Prozessqualität.'
   } else if (score >= 40) {
