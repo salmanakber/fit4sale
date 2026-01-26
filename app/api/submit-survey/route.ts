@@ -10,16 +10,43 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
     .select('question_id, answer_value, score, category')
 
   // Calculate total score based on answers and benchmarks
-  let totalScore = 0
+  let totalAchievedScore = 0
+  let totalBenchmarkScore = 0
   const questionScores: Record<string, number> = {}
+  const questionBreakdown: Array<{
+    question_id: string
+    benchmark_score: number
+    achieved_score: number
+    deviation: number
+    answer_value: string | string[]
+  }> = []
   const categoryScores: Record<string, { total: number; count: number }> = {}
 
+  // First, calculate benchmark scores (max possible score) per question
+  const questionBenchmarks: Record<string, number> = {}
+  if (benchmarks) {
+    for (const benchmark of benchmarks) {
+      const qId = benchmark.question_id
+      if (!questionBenchmarks[qId] || benchmark.score > questionBenchmarks[qId]) {
+        questionBenchmarks[qId] = benchmark.score
+      }
+    }
+  }
+
+  // Process each answer and validate against benchmarks
   for (const [questionId, answer] of Object.entries(answers)) {
     if (questionId === 'participant_email') continue
 
     const relevantBenchmarks = benchmarks?.filter(
       (b: any) => b.question_id === questionId
     ) || []
+
+    // Get benchmark score (max possible for this question)
+    const benchmarkScore = questionBenchmarks[questionId] || 0
+    totalBenchmarkScore += benchmarkScore
+
+    let achievedScore = 0
+    let answerValue: string | string[] = ''
 
     if (Array.isArray(answer)) {
       // Multiple choice - average the scores
@@ -30,47 +57,98 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
         })
         .filter((s: number) => s > 0)
 
-      const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
-      totalScore += avgScore
-      questionScores[questionId] = avgScore
+      achievedScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+      answerValue = answer
     } else {
       // Single answer
       const benchmark = relevantBenchmarks.find((b: any) => b.answer_value === answer)
-      const score = benchmark?.score || 0
-      totalScore += score
-      questionScores[questionId] = score
+      achievedScore = benchmark?.score || 0
+      answerValue = answer as string
     }
+
+    // Calculate deviation (benchmark - achieved)
+    const deviation = benchmarkScore - achievedScore
+
+    // Store per-question result
+    totalAchievedScore += achievedScore
+    questionScores[questionId] = achievedScore
+
+    questionBreakdown.push({
+      question_id: questionId,
+      benchmark_score: benchmarkScore,
+      achieved_score: achievedScore,
+      deviation: deviation,
+      answer_value: answerValue,
+    })
+
+    // Store in database for per-question tracking
+    // Note: For multiple choice answers, we store as JSON string for database compatibility
+    const answerValueForDb = Array.isArray(answerValue) 
+      ? JSON.stringify(answerValue) 
+      : (answerValue || '')
+    
+    await supabase
+      .from('question_benchmark_results')
+      .upsert({
+        submission_id: submissionId,
+        question_id: questionId,
+        answer_value: answerValueForDb,
+        benchmark_score: benchmarkScore,
+        achieved_score: achievedScore,
+        deviation: deviation,
+        updated_at: new Date().toISOString(),
+      })
 
     // Category/section rollup (optional; depends on benchmarks having a category)
     const category = relevantBenchmarks.find((b: any) => b?.category)?.category
     if (category) {
       if (!categoryScores[category]) categoryScores[category] = { total: 0, count: 0 }
-      categoryScores[category].total += questionScores[questionId] || 0
+      categoryScores[category].total += achievedScore
       categoryScores[category].count += 1
     }
   }
 
-  const finalScore = Math.round(totalScore / Object.keys(questionScores).length) || 0
+  // Calculate final average score
+  const questionCount = Object.keys(questionScores).length
+  const finalScore = questionCount > 0 ? Math.round(totalAchievedScore / questionCount) : 0
+
+  // Calculate overall deviation
+  const overallDeviation = totalBenchmarkScore - totalAchievedScore
+
+  // Calculate category averages
   const categoryAverages: Record<string, number> = {}
   for (const [cat, agg] of Object.entries(categoryScores)) {
     categoryAverages[cat] = agg.count ? Math.round(agg.total / agg.count) : 0
   }
 
-  // Store evaluation results in cache
+  // Store evaluation results in cache with detailed breakdown
   const { error: cacheError } = await supabase
     .from('evaluation_results_cache')
     .upsert({
       submission_id: submissionId,
       total_score: finalScore,
+      total_benchmark_score: totalBenchmarkScore,
+      total_achieved_score: totalAchievedScore,
+      overall_deviation: overallDeviation,
       section_scores: { byQuestion: questionScores, byCategory: categoryAverages },
+      question_breakdown: questionBreakdown,
       recommendations: generateRecommendations(finalScore),
+      updated_at: new Date().toISOString(),
     })
 
   if (cacheError) {
     console.error('[v0] Error caching evaluation:', cacheError)
   }
 
-  return { totalScore: finalScore, questionScores, categoryScores: categoryAverages }
+  return {
+    totalScore: finalScore,
+    totalBenchmarkScore,
+    totalAchievedScore,
+    overallDeviation,
+    questionScores,
+    questionBreakdown,
+    categoryScores: categoryAverages,
+  }
 }
 
 function generateRecommendations(score: number): string {

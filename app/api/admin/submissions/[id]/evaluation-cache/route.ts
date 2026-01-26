@@ -35,7 +35,7 @@ export async function GET(
 
     const { data, error } = await supabase
       .from('evaluation_results_cache')
-      .select('total_score, section_scores, recommendations, updated_at')
+      .select('total_score, total_benchmark_score, total_achieved_score, overall_deviation, section_scores, question_breakdown, recommendations, updated_at')
       .eq('submission_id', id)
       .single()
 
