@@ -383,16 +383,12 @@ const supabase = createServerClient(
         </html>
       `
 
-      const emailResult = await sendResendEmail({
-        to: participantEmail,
-        subject: 'Fit4Sale – Vorläufige Auswertung',
-        html,
-      const subject = 'Fit4Sale – Vorläufige Auswertung'
-      const emailResult = await sendResendEmail({
-        to: participantEmail,
-        subject,
-        html,
-      })
+const emailResult = await sendResendEmail({
+  to: participantEmail,
+  subject: 'Fit4Sale – Vorläufige Auswertung',
+  html,
+});
+
 
       if (emailResult.success) {
         await supabase
