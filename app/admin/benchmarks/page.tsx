@@ -631,7 +631,7 @@ export default function BenchmarksPage() {
                                   Benchmark erstellen
                                 </Button>
                             </div>
-                        </td>
+                        </td> 
                     </tr>
                   )}
                 </tbody>
