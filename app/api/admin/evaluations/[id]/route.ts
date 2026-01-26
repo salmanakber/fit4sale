@@ -83,7 +83,7 @@ export async function GET(
   } catch (error) {
     console.error('[v0] Error fetching evaluation:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error. ' },
       { status: 500 }
     )
   }
