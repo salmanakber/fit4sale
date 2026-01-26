@@ -225,8 +225,8 @@ export async function POST(request: NextRequest) {
             } catch (error) {
               console.error('[v0] Error setting cookies:', error)
             }
-          },
-        },
+          }
+        }
       }
     )
 
