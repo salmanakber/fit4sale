@@ -37,6 +37,10 @@ interface IntroSettings {
   description: string;
   estimated_time: string;
   button_text?: string;
+<<<<<<< HEAD
+=======
+  additional_text?: string;
+>>>>>>> 50dc961 (Final updates 24-jan)
 }
 
 interface QuizData {
@@ -168,9 +172,14 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
   // --- Loading State ---
   if (loading || !quizData) {
     return (
+<<<<<<< HEAD
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-blue-900" />
         <p className="text-slate-500 font-medium">Lade Quiz...</p>
+=======
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-foreground">Umfrage wird geladen...</p>
+>>>>>>> 50dc961 (Final updates 24-jan)
       </div>
     );
   }
@@ -224,6 +233,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
           </div>
         )}
 
+<<<<<<< HEAD
         {/* Main Card */}
         <Card className="overflow-hidden rounded-3xl border-0 shadow-2xl shadow-blue-900/5 bg-white">
           <div className="p-6 md:p-10 lg:p-12">
@@ -239,12 +249,36 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                     {quizData.intro.description}
                   </p>
                 </div>
+=======
+        <Card className="p-8 md:p-12">
+          {isIntro ? (
+            // Intro Screen
+            <div className="space-y-6 text-center">
+              <div className="flex justify-center mb-6">
+                <img
+                  src="/fit4sale-logo.png"
+                  alt="Fit4Sale Logo"
+                  width={200}
+                  height={200}
+                  className="object-contain"
+                />
+              </div>
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+                  {quizData.intro.title}
+                </h1>
+                <p className="text-lg text-foreground/80 mb-6">
+                  {quizData.intro.description}
+                </p>
+              </div>
+>>>>>>> 50dc961 (Final updates 24-jan)
 
                 <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-6 py-3 text-blue-800 font-semibold shadow-sm">
                   <Clock className="h-5 w-5" />
                   <span>{quizData.intro.estimated_time}</span>
                 </div>
 
+<<<<<<< HEAD
                 <div className="w-full max-w-xs pt-4">
                     <Button
                         onClick={handleNext}
@@ -254,6 +288,26 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                         {quizData.intro.button_text || "Jetzt Starten"}
                     </Button>
                 </div>
+=======
+              <Button
+                onClick={handleNext}
+                size="lg"
+                className="mt-8 w-full md:w-auto"
+              >
+                Start
+              </Button>
+            </div>
+          ) : isEmailStep ? (
+            // Email Screen
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground mb-4">
+                  Ihre E-Mail-Adresse
+                </h2>
+                <p className="text-foreground/70 mb-6">
+                  Bitte geben Sie Ihre E-Mail-Adresse ein, damit wir Ihnen die Auswertung senden können.
+                </p>
+>>>>>>> 50dc961 (Final updates 24-jan)
               </div>
             )}
 
@@ -269,6 +323,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   </p>
                 </div>
 
+<<<<<<< HEAD
                 <div className="space-y-5">
                   
                   {/* Title Selection */}
@@ -293,6 +348,95 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                           {option}
                         </div>
                       ))}
+=======
+              <div className="flex gap-4 mt-8">
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  className="flex-1 bg-transparent"
+                >
+                  Zurück
+                </Button>
+                <Button onClick={handleNext} className="flex-1">
+                  Weiter
+                </Button>
+              </div>
+            </div>
+          ) : currentQuestion ? (
+            // Question Screen
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground">
+                  {currentQuestion.question_text}
+                </h2>
+              </div>
+
+              <div className="space-y-4">
+                {currentQuestion.question_type === 'textarea' ? (
+                  <textarea
+                    value={typeof answers[currentQuestion.id] === 'string' ? answers[currentQuestion.id] : ''}
+                    onChange={(e) => {
+                      setAnswers({
+                        ...answers,
+                        [currentQuestion.id]: e.target.value,
+                      });
+                    }}
+                    placeholder="Geben Sie hier Ihre Antwort ein..."
+                    rows={6}
+                    className="w-full p-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                ) : (
+                  currentQuestion.quiz_answer_options.map((option) => (
+                    <div key={option.id} className="flex items-center">
+                      {currentQuestion.question_type === 'radio' ? (
+                        <>
+                          <input
+                            type="radio"
+                            id={option.id}
+                            name={currentQuestion.id}
+                            value={option.option_value}
+                            checked={
+                              answers[currentQuestion.id] === option.option_value
+                            }
+                            onChange={() =>
+                              handleAnswerChange(
+                                currentQuestion.id,
+                                option.option_value,
+                                false
+                              )
+                            }
+                            className="w-4 h-4 text-primary cursor-pointer"
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="checkbox"
+                            id={option.id}
+                            value={option.option_value}
+                            checked={
+                              Array.isArray(answers[currentQuestion.id])
+                                ? (answers[currentQuestion.id] as string[]).includes(option.option_value)
+                                : false
+                            }
+                            onChange={() =>
+                              handleAnswerChange(
+                                currentQuestion.id,
+                                option.option_value,
+                                true
+                              )
+                            }
+                            className="w-4 h-4 text-primary cursor-pointer"
+                          />
+                        </>
+                      )}
+                      <label
+                        htmlFor={option.id}
+                        className="ml-3 text-foreground cursor-pointer flex-1 py-2"
+                      >
+                        {option.option_text}
+                      </label>
+>>>>>>> 50dc961 (Final updates 24-jan)
                     </div>
                     {formErrors.title && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.title}</p>}
                   </div>
@@ -369,7 +513,11 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                     onClick={handlePrevious}
                     className="h-14 px-6 text-slate-500 hover:text-slate-900 rounded-xl"
                   >
+<<<<<<< HEAD
                     Zurück
+=======
+                    {submitting ? 'Wird eingereicht...' : 'Absenden'}
+>>>>>>> 50dc961 (Final updates 24-jan)
                   </Button>
                   <Button 
                     onClick={handleNext} 

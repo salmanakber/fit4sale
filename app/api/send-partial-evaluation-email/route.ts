@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const categoryHtml = byCategory
       ? `
         <div style="margin: 20px 0;">
-          <h3 style="margin: 0 0 10px 0;">Teilbereiche</h3>
+          <h3 style="margin: 0 0 10px 0;">Bereiche</h3>
           <table style="width: 100%; border-collapse: collapse;">
             ${Object.entries(byCategory)
               .map(
@@ -105,8 +105,13 @@ export async function POST(request: NextRequest) {
               <h1>Fit4Sale – Vorläufige Auswertung</h1>
             </div>
             <div class="content">
+<<<<<<< HEAD
               <p>${greeting},</p>
               <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check. Wir haben Ihre Angaben ausgewertet und eine vorläufige Auswertung erstellt.</p>
+=======
+              <p>Hallo,</p>
+              <p>vielen Dank für Ihre Teilnahme an unserer Sales-Umfrage. Wir haben Ihre Antworten ausgewertet und eine vorläufige Einschätzung erstellt.</p>
+>>>>>>> 50dc961 (Final updates 24-jan)
               
               <div class="score-card">
                 <p>Ihr Score:</p>
@@ -117,11 +122,19 @@ export async function POST(request: NextRequest) {
               ${categoryHtml}
 
               <p><strong>Nächste Schritte:</strong></p>
+<<<<<<< HEAD
               <p>Die vollständige Auswertung wird nach manueller Freigabe per E-Mail versendet.</p>
+=======
+              <p>Wir prüfen Ihre vollständige Auswertung manuell und senden Ihnen anschließend die detaillierte Auswertung per E-Mail.</p>
+>>>>>>> 50dc961 (Final updates 24-jan)
               
               <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
               
+<<<<<<< HEAD
               <p>Freundliche Grüße<br>KMU-Beratungen</p>
+=======
+              <p>Mit freundlichen Grüßen,<br>KMU-Beratungen</p>
+>>>>>>> 50dc961 (Final updates 24-jan)
             </div>
             <div class="footer">
               <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
@@ -132,10 +145,16 @@ export async function POST(request: NextRequest) {
     `
 
     // Send the email (participant)
+<<<<<<< HEAD
     const subject = 'Fit4Sale – Vorläufige Auswertung'
     const emailResult = await sendResendEmail({
       to: participantEmail,
       subject,
+=======
+    const emailResult = await sendResendEmail({
+      to: participantEmail,
+      subject: 'Fit4Sale – Vorläufige Auswertung',
+>>>>>>> 50dc961 (Final updates 24-jan)
       html,
     })
 
@@ -166,7 +185,11 @@ export async function POST(request: NextRequest) {
       submission_id: submissionId,
       recipient_email: participantEmail,
       email_type: 'partial',
+<<<<<<< HEAD
       subject,
+=======
+      subject: 'Fit4Sale – Vorläufige Auswertung',
+>>>>>>> 50dc961 (Final updates 24-jan)
       sender_email: 'aschwanden@kmu-beratungen.ch',
       status: 'sent',
       admin_notified: true,
@@ -175,7 +198,11 @@ export async function POST(request: NextRequest) {
     // Admin log entry (notification trail)
     await supabase.from('admin_logs').insert({
       admin_id: null,
+<<<<<<< HEAD
       action: `Vorläufige Auswertung per E-Mail versendet (${participantEmail})`,
+=======
+      action: `Partial report email sent to participant (${participantEmail})`,
+>>>>>>> 50dc961 (Final updates 24-jan)
       submission_id: submissionId,
     })
 

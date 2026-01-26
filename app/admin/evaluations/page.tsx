@@ -86,6 +86,7 @@ export default function EvaluationsPage() {
   }
 
   return (
+<<<<<<< HEAD
     <div className="space-y-6">
       
       {/* Page Header */}
@@ -137,6 +138,44 @@ export default function EvaluationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
+=======
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-foreground">Reports</h2>
+        <Link href="/admin/submissions">
+          <Button size="sm">Create New Report</Button>
+        </Link>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full">
+          <thead className="border-b border-border bg-secondary">
+            <tr>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                Participant
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                Summary
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                Score A
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                Score B
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                Completed
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+>>>>>>> 50dc961 (Final updates 24-jan)
             {evaluations.length > 0 ? (
     evaluations.map((evaluation) => (
                   <tr 

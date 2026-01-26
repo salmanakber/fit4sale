@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
         <body>
           <div class="container">
             <div class="header">
+<<<<<<< HEAD
               <h1>Fit4Sale – Sales-Check eingereicht</h1>
             </div>
             <div class="content">
@@ -46,6 +47,17 @@ export async function POST(request: NextRequest) {
               <p>Sie erhalten in Kürze eine <strong>vorläufige Auswertung</strong> per E-Mail. Die <strong>vollständige Auswertung</strong> wird nach manueller Freigabe versendet.</p>
               <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
               <p>Freundliche Grüße<br>KMU-Beratungen</p>
+=======
+              <h1>Fit4Sale – Umfrage eingereicht</h1>
+            </div>
+            <div class="content">
+              <p>Hallo ${body.customerName},</p>
+              <p>vielen Dank, dass Sie unsere Sales-Umfrage abgeschlossen haben.</p>
+              <p><strong>Ihre Eingabenummer:</strong> ${body.submissionId}</p>
+              <p>Sie erhalten in Kürze eine vorläufige Auswertung per E-Mail. Die detaillierte Auswertung wird nach manueller Prüfung versendet.</p>
+              <p>Bei Fragen kontaktieren Sie uns bitte unter aschwanden@kmu-beratungen.ch</p>
+              <p>Mit freundlichen Grüßen,<br>KMU-Beratungen</p>
+>>>>>>> 50dc961 (Final updates 24-jan)
             </div>
             <div class="footer">
               <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
@@ -55,6 +67,7 @@ export async function POST(request: NextRequest) {
       </html>
     `
 
+<<<<<<< HEAD
     // Send email using Resend
     const subject = 'Fit4Sale – Sales-Check eingereicht'
     const emailResult = await sendResendEmail({
@@ -97,6 +110,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (!emailResult.success) {
+=======
+    const emailSent = await sendResendEmail({
+      to: body.customerEmail,
+      subject: 'Fit4Sale – Umfrage eingereicht',
+      html,
+    })
+
+    if (!emailSent.success) {
+      console.error('[v0] Failed to send email to:', body.customerEmail)
+>>>>>>> 50dc961 (Final updates 24-jan)
       return NextResponse.json(
         { error: emailResult.error || 'Failed to send email' },
         { status: 500 }

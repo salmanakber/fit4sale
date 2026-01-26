@@ -165,9 +165,17 @@ export default function EvaluationDetailPage() {
 
   if (isLoading) {
     return (
+<<<<<<< HEAD
       <div className="flex h-[50vh] items-center justify-center flex-col gap-4 text-slate-500">
         <Loader2 className="h-8 w-8 animate-spin text-blue-900" />
         <p>Bericht wird geladen...</p>
+=======
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary"></div>
+          <p className="text-muted-foreground">Loading report...</p>
+        </div>
+>>>>>>> 50dc961 (Final updates 24-jan)
       </div>
     )
   }
@@ -220,8 +228,13 @@ export default function EvaluationDetailPage() {
           <Button
             onClick={handleSendEmail}
             disabled={isSendingEmail || !isApproved}
+<<<<<<< HEAD
             className="bg-blue-900 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20"
             title={!isApproved ? 'Bitte zuerst freigeben' : undefined}
+=======
+            size="sm"
+            title={!isApproved ? 'Approve first to send the full report email' : undefined}
+>>>>>>> 50dc961 (Final updates 24-jan)
           >
              {isSendingEmail ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sende Email...</>
@@ -301,6 +314,7 @@ export default function EvaluationDetailPage() {
             </div>
         </div>
 
+<<<<<<< HEAD
         {/* RIGHT COLUMN: Sidebar Meta Data */}
         <div className="space-y-6">
             
@@ -369,6 +383,68 @@ export default function EvaluationDetailPage() {
 
         </div>
 
+=======
+        {/* Scores */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <ScoreDisplay score={evaluation.fitness_level_score} label="Score A" />
+          <ScoreDisplay score={evaluation.readiness_score} label="Score B" />
+        </div>
+
+        {/* Details */}
+        <div className="rounded-lg border border-border bg-card p-8">
+          <h3 className="mb-4 text-lg font-semibold text-foreground">Details</h3>
+          <SectionField label="Summary" value={evaluation.recommended_program} />
+          <SectionField label="Category" value={evaluation.intensity_level} />
+          <SectionField label="Timeline" value={evaluation.program_duration} />
+          <SectionField label="Notes" value={evaluation.special_modifications} />
+          <SectionField label="Risks / Blockers" value={evaluation.safety_concerns} />
+        </div>
+
+        {/* Recommendations */}
+        <div className="rounded-lg border border-border bg-card p-8">
+          <h3 className="mb-4 text-lg font-semibold text-foreground">
+            Personalized Recommendations
+          </h3>
+          {recommendationsList.length > 0 ? (
+            <ul className="space-y-3">
+              {recommendationsList.map((rec, idx) => (
+                <li key={idx} className="flex gap-3 text-foreground">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                    {idx + 1}
+                  </div>
+                  <div>{rec.trim()}</div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground">No additional recommendations</p>
+          )}
+        </div>
+
+        {/* Participant Info */}
+        <div className="rounded-lg border border-border bg-card p-8">
+          <h3 className="mb-4 text-lg font-semibold text-foreground">Participant Information</h3>
+          <SectionField label="Name" value={evaluation.quiz_submissions.patient_name} />
+          <SectionField
+            label="Email"
+            value={
+              evaluation.quiz_submissions.patient_email ||
+              evaluation.quiz_submissions.participant_email ||
+              '-'
+            }
+          />
+          <SectionField
+            label="Report Created"
+            value={new Date(evaluation.evaluation_completed_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          />
+        </div>
+>>>>>>> 50dc961 (Final updates 24-jan)
       </div>
     </div>
   )

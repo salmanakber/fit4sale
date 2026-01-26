@@ -17,7 +17,11 @@ export default function Home() {
       if (!response.ok) throw new Error('Senden fehlgeschlagen');
 
       const data = await response.json();
+<<<<<<< HEAD
       alert('Danke! Ihre Angaben wurden übermittelt. Sie erhalten die vorläufige Auswertung per E-Mail.');
+=======
+      alert('Danke! Ihre Umfrage wurde eingereicht. Sie erhalten die vorläufige Auswertung per E-Mail.');
+>>>>>>> 50dc961 (Final updates 24-jan)
       router.push('/');
     } catch (error) {
       console.error('Error submitting survey:', error);

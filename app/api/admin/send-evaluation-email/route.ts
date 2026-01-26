@@ -157,7 +157,11 @@ export async function POST(request: NextRequest) {
     // Log the action
     await supabase.from('admin_logs').insert({
       admin_id: adminSession.value,
+<<<<<<< HEAD
       action: 'Vollständige Auswertung per E-Mail versendet',
+=======
+      action: 'Sent full report email',
+>>>>>>> 50dc961 (Final updates 24-jan)
       submission_id: evaluation.submission_id,
     })
 
