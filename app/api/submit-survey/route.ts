@@ -161,7 +161,7 @@ function generateRecommendations(score: number): string {
   } else {
     return 'Niedrige Verkaufs-Readiness: Wir empfehlen, die Grundlagen (Angebot, Zielgruppe, Prozess) zuerst sauber zu definieren.'
   } else if (score >= 60) {
-    return 'Gut: Solide Basis – mit klaren Maßnahmen steigern Sie Abschlussquote und Prozessqualität.'
+    return 'Gut: Solide Basis – mit klaren Maßnahmen steigern Sie Abschlussquote und Prozessqualität.  '
   } else if (score >= 40) {
     return 'Mittel: Es gibt mehrere Hebel – strukturierte Schritte erhöhen Konsistenz und Conversion.'
   } else {
