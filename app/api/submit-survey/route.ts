@@ -153,21 +153,20 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
 
 function generateRecommendations(score: number): string {
   if (score >= 80) {
-    return 'Sehr gute Verkaufs-Readiness: Sie sind gut positioniert – nächste Optimierungen bringen schnell messbare Effekte.'
-  } else if (score >= 60) {
-    return 'Gute Verkaufs-Readiness: Solide Basis – mit gezielten Anpassungen lässt sich der Abschluss- und Lead-Flow verbessern.'
-  } else if (score >= 40) {
-    return 'Mittlere Verkaufs-Readiness: Es gibt klare Hebel – strukturierte Maßnahmen erhöhen Conversion und Konsistenz.'
-  } else {
-    return 'Niedrige Verkaufs-Readiness: Wir empfehlen, die Grundlagen (Angebot, Zielgruppe, Prozess) zuerst sauber zu definieren.'
-  } else if (score >= 60) {
-    return 'Gut: Solide Basis – mit klaren Maßnahmen steigern Sie Abschlussquote und Prozessqualität.  '
-  } else if (score >= 40) {
-    return 'Mittel: Es gibt mehrere Hebel – strukturierte Schritte erhöhen Konsistenz und Conversion.'
-  } else {
-    return 'Ausbaufähig: Wir empfehlen, Angebot/Zielgruppe/Prozess zuerst sauber zu definieren und zu standardisieren.'
+    return 'Sehr gute Verkaufs-Readiness: Sie sind gut positioniert – nächste Optimierungen bringen schnell messbare Effekte.';
   }
+
+  if (score >= 60) {
+    return 'Gute Verkaufs-Readiness: Solide Basis – mit gezielten Anpassungen lässt sich der Abschluss- und Lead-Flow verbessern.';
+  }
+
+  if (score >= 40) {
+    return 'Mittlere Verkaufs-Readiness: Es gibt klare Hebel – strukturierte Maßnahmen erhöhen Conversion und Konsistenz.';
+  }
+
+  return 'Niedrige Verkaufs-Readiness: Wir empfehlen, die Grundlagen (Angebot, Zielgruppe, Prozess) zuerst sauber zu definieren.';
 }
+
 
 function generateGermanGreeting(title: string | null, firstName: string | null, lastName: string | null): string {
   // Formal: "Sehr geehrte(r) [Title] [Last Name]"
