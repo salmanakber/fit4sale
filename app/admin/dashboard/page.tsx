@@ -10,7 +10,8 @@ import {
   CheckCircle2, 
   ArrowRight, 
   Settings, 
-  TrendingUp 
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +22,13 @@ export default function AdminDashboard() {
     totalEvaluations: 0,
     partialEmailsSent: 0,
     fullEmailsSent: 0,
+    trends: {
+      totalSubmissions: 0,
+      pendingApprovals: 0,
+      totalEvaluations: 0,
+      partialEmailsSent: 0,
+      fullEmailsSent: 0,
+    },
   })
   const [isLoading, setIsLoading] = useState(true)
 
@@ -42,31 +50,51 @@ export default function AdminDashboard() {
   }, [])
 
   // Component for the Top Stats Cards
-  const StatCard = ({ title, value, icon: Icon, colorClass, trend }: any) => (
-    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{title}</p>
-          <div className="mt-2 flex items-baseline gap-2">
-            {isLoading ? (
-                <div className="h-8 w-16 animate-pulse rounded bg-slate-100"></div>
-            ) : (
-                <span className="text-3xl font-bold text-blue-950">{value}</span>
-            )}
+  const StatCard = ({ title, value, icon: Icon, colorClass, trendPercent }: any) => {
+    const isPositive = trendPercent >= 0
+    const trendValue = Math.abs(trendPercent)
+    const hasTrend = trendPercent !== 0 || trendPercent === 0 // Show trend even if 0
+    
+    return (
+      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{title}</p>
+            <div className="mt-2 flex items-baseline gap-2">
+              {isLoading ? (
+                  <div className="h-8 w-16 animate-pulse rounded bg-slate-100"></div>
+              ) : (
+                  <span className="text-3xl font-bold text-blue-950">{value}</span>
+              )}
+            </div>
+          </div>
+          <div className={cn("rounded-lg p-3", colorClass)}>
+            <Icon className="h-6 w-6 text-white" />
           </div>
         </div>
-        <div className={cn("rounded-lg p-3", colorClass)}>
-          <Icon className="h-6 w-6 text-white" />
-        </div>
+        {/* Dynamic Trend Line */}
+        {!isLoading && (
+          <div className="mt-4 flex items-center gap-1 text-xs">
+            {trendPercent > 0 ? (
+              <>
+                <TrendingUp className="h-3 w-3 text-emerald-500" />
+                <span className="text-emerald-600 font-medium">+{trendValue}%</span>
+                <span className="text-slate-400">seit letztem Monat</span>
+              </>
+            ) : trendPercent < 0 ? (
+              <>
+                <TrendingDown className="h-3 w-3 text-red-500" />
+                <span className="text-red-600 font-medium">-{trendValue}%</span>
+                <span className="text-slate-400">seit letztem Monat</span>
+              </>
+            ) : (
+              <span className="text-slate-400">Keine Änderung seit letztem Monat</span>
+            )}
+          </div>
+        )}
       </div>
-      {/* Decorative Trend Line (Static for design) */}
-      <div className="mt-4 flex items-center gap-1 text-xs text-slate-400">
-         <TrendingUp className="h-3 w-3 text-emerald-500" />
-         <span className="text-emerald-600 font-medium">+12%</span> 
-         <span>seit letztem Monat</span>
-      </div>
-    </div>
-  )
+    )
+  }
 
   // Component for Quick Action Cards
   const ActionCard = ({ title, description, icon: Icon, href, color }: any) => (
@@ -108,18 +136,21 @@ export default function AdminDashboard() {
             value={stats.totalSubmissions} 
             icon={Users} 
             colorClass="bg-blue-600"
+            trendPercent={stats.trends?.totalSubmissions ?? 0}
         />
         <StatCard 
             title="Offene Freigaben" 
             value={stats.pendingApprovals} 
             icon={Clock} 
-            colorClass="bg-amber-500" 
+            colorClass="bg-amber-500"
+            trendPercent={stats.trends?.pendingApprovals ?? 0}
         />
         <StatCard 
             title="Auswertungen" 
             value={stats.totalEvaluations} 
             icon={CheckCircle2} 
-            colorClass="bg-emerald-500" 
+            colorClass="bg-emerald-500"
+            trendPercent={stats.trends?.totalEvaluations ?? 0}
         />
       </div>
 
