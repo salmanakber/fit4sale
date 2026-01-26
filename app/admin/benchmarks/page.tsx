@@ -37,6 +37,12 @@ interface Question {
   question_text: string
   question_type: string
   order_index: number
+  quiz_answer_options?: Array<{
+    id: string
+    option_text: string
+    option_value: string
+    order_index: number
+  }>
 }
 
 // --- Custom Components ---
@@ -173,6 +179,11 @@ export default function BenchmarksPage() {
     category: '',
   })
 
+  // Get selected question details
+  const selectedQuestion = questions.find((q) => q.id === selectedQuestionId)
+  const isTextareaQuestion = selectedQuestion?.question_type === 'textarea'
+  const answerOptions = selectedQuestion?.quiz_answer_options || []
+
   // Format questions for the custom dropdown
   const questionOptions = questions.map(q => ({
     value: q.id,
@@ -200,6 +211,7 @@ export default function BenchmarksPage() {
 
       if (questionsRes.ok) {
         const data = await questionsRes.json()
+        // Sort questions and ensure answer options are included
         setQuestions(data.sort((a: Question, b: Question) => a.order_index - b.order_index))
       }
     } catch (error) {
@@ -291,6 +303,13 @@ export default function BenchmarksPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Reset answer_value when question changes
+  useEffect(() => {
+    if (selectedQuestionId && !editingBenchmark) {
+      setFormData((prev) => ({ ...prev, answer_value: '' }))
+    }
+  }, [selectedQuestionId, editingBenchmark])
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-600/20"
     if (score >= 50) return "bg-amber-50 text-amber-700 border-amber-200 ring-amber-600/20"
@@ -371,7 +390,15 @@ export default function BenchmarksPage() {
                               </div>
                               <h3 className="text-sm font-bold text-blue-900 mb-2 relative z-10">Wichtiger Hinweis</h3>
                               <p className="text-sm text-blue-800/80 leading-relaxed relative z-10">
-                                  Der <strong>Antwort-Wert</strong> muss exakt mit dem technischen <code>value</code> übereinstimmen, der im Quiz-Editor hinterlegt ist.
+                                  {selectedQuestionId ? (
+                                    isTextareaQuestion ? (
+                                      <>Für <strong>Text-Fragen</strong> geben Sie den erwarteten Text-Wert manuell ein.</>
+                                    ) : (
+                                      <>Für <strong>Radio/Checkbox-Fragen</strong> wählen Sie die Antwort-Option aus dem Dropdown. Der technische Wert wird automatisch übernommen.</>
+                                    )
+                                  ) : (
+                                    <>Wählen Sie zuerst eine Frage aus, um die verfügbaren Antwort-Optionen zu sehen.</>
+                                  )}
                               </p>
                           </div>
                       </div>
@@ -400,16 +427,41 @@ export default function BenchmarksPage() {
                           </div>
 
                           <div className="space-y-2">
-                              <label className="text-xs font-bold uppercase tracking-wide text-slate-500">Antwort-Wert (Technisch)</label>
-                              <div className="relative">
+                              <label className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                Antwort-Wert {isTextareaQuestion ? '(Text-Eingabe)' : '(Aus Optionen wählen)'}
+                              </label>
+                              {isTextareaQuestion ? (
                                 <Input
                                     value={formData.answer_value}
                                     onChange={(e) => setFormData({ ...formData, answer_value: e.target.value })}
-                                    placeholder="exakt-wie-im-quiz"
-                                    className="font-mono text-sm border-slate-200 bg-slate-50 focus-visible:ring-blue-950 pl-9 h-10"
+                                    placeholder="Geben Sie den Text-Wert ein..."
+                                    className="border-slate-200 focus-visible:ring-blue-950 h-10"
                                 />
-                                <div className="absolute left-3 top-2.5 text-slate-400 font-mono text-xs">/</div>
-                              </div>
+                              ) : answerOptions.length > 0 ? (
+                                <CustomSelect
+                                    options={answerOptions
+                                      .sort((a, b) => a.order_index - b.order_index)
+                                      .map((opt) => ({
+                                        value: opt.option_value,
+                                        label: opt.option_text,
+                                        subLabel: `Wert: ${opt.option_value}`
+                                      }))}
+                                    value={formData.answer_value}
+                                    onChange={(val) => setFormData({ ...formData, answer_value: val })}
+                                    placeholder="Antwort-Option auswählen..."
+                                    disabled={!selectedQuestionId}
+                                />
+                              ) : (
+                                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                                  <p className="font-medium mb-1">Keine Antwort-Optionen verfügbar</p>
+                                  <p className="text-xs">Diese Frage hat noch keine Antwort-Optionen. Bitte fügen Sie zuerst Optionen im Quiz-Editor hinzu.</p>
+                                </div>
+                              )}
+                              {!isTextareaQuestion && answerOptions.length > 0 && formData.answer_value && (
+                                <p className="text-xs text-slate-500 mt-1">
+                                  Ausgewählter Wert: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono">{formData.answer_value}</code>
+                                </p>
+                              )}
                           </div>
 
                           <div className="space-y-3">
