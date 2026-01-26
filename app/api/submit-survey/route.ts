@@ -43,18 +43,29 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
       (b: any) => b.question_id === questionId
     ) || []
 
+    // Log if no benchmarks found for this question (for debugging)
+    if (relevantBenchmarks.length === 0) {
+      console.warn(`[v0] No benchmarks found for question ${questionId}`)
+    }
+
     // Get benchmark score (max possible for this question)
     const benchmarkScore = questionBenchmarks[questionId] || 0
     totalBenchmarkScore += benchmarkScore
 
     let achievedScore = 0
     let answerValue: string | string[] = ''
+    let matchedBenchmark: any = null
 
     if (Array.isArray(answer)) {
       // Multiple choice - average the scores
       const scores = answer
         .map((a: string) => {
           const benchmark = relevantBenchmarks.find((b: any) => b.answer_value === a)
+          if (benchmark) {
+            matchedBenchmark = benchmark
+          } else {
+            console.warn(`[v0] No benchmark found for answer value "${a}" in question ${questionId}`)
+          }
           return benchmark?.score || 0
         })
         .filter((s: number) => s > 0)
@@ -64,7 +75,14 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
     } else {
       // Single answer
       const benchmark = relevantBenchmarks.find((b: any) => b.answer_value === answer)
-      achievedScore = benchmark?.score || 0
+      if (benchmark) {
+        matchedBenchmark = benchmark
+        achievedScore = benchmark.score
+      } else {
+        console.warn(`[v0] No benchmark found for answer value "${answer}" in question ${questionId}. Available benchmarks:`, 
+          relevantBenchmarks.map((b: any) => b.answer_value))
+        achievedScore = 0
+      }
       answerValue = answer as string
     }
 
