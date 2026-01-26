@@ -109,13 +109,6 @@ export default function SubmissionsPage() {
   }
 
   return (
-
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground">Survey Entries</h2>
-        <div className="text-sm text-muted-foreground">
-          Total: {filteredSubmissions.length}
-
     <div className="space-y-6">
       {/* Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -191,14 +184,6 @@ export default function SubmissionsPage() {
                   <td className="px-6 py-4 text-sm text-muted-foreground">
                     {formatDate(submission.submitted_at || submission.created_at)}
                   </td>
-                  <td className="px-6 py-4 text-sm">
-                    <Link
-                      href={`/admin/submissions/${submission.id}`}
-                      className="text-primary hover:underline"
-                    >
-                      View Details
-                    </Link>
-
       {/* Main Table Card */}
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
