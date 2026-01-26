@@ -432,5 +432,5 @@ export default function EvaluationDetailPage() {
 
       </div>
     </div>
-  )
+  );
 }
