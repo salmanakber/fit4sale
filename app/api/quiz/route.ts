@@ -50,7 +50,7 @@ export async function GET() {
         title: 'Fit4Sale Sales-Check',
         description:
           'Beantworten Sie ein paar Fragen zu Ihrem Sales-Prozess – Sie erhalten eine vorläufige Auswertung per E-Mail.',
-          'Beantworten Sie ein paar Fragen zu Ihrem Vertrieb – Sie erhalten eine vorläufige Auswertung per E-Mail.',
+       
         estimated_time: '8-10 minutes',
         button_text: 'Start',
       },

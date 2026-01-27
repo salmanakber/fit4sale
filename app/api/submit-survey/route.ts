@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendResendEmail } from '@/lib/resend'
 
+// --- Helper Functions ---
+
 async function calculateEvaluation(supabase: any, submissionId: string, answers: any) {
   // Fetch benchmarks for all questions
   const { data: benchmarks } = await supabase
@@ -41,18 +43,29 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
       (b: any) => b.question_id === questionId
     ) || []
 
+    // Log if no benchmarks found for this question (for debugging)
+    if (relevantBenchmarks.length === 0) {
+      console.warn(`[v0] No benchmarks found for question ${questionId}`)
+    }
+
     // Get benchmark score (max possible for this question)
     const benchmarkScore = questionBenchmarks[questionId] || 0
     totalBenchmarkScore += benchmarkScore
 
     let achievedScore = 0
     let answerValue: string | string[] = ''
+    let matchedBenchmark: any = null
 
     if (Array.isArray(answer)) {
       // Multiple choice - average the scores
       const scores = answer
         .map((a: string) => {
           const benchmark = relevantBenchmarks.find((b: any) => b.answer_value === a)
+          if (benchmark) {
+            matchedBenchmark = benchmark
+          } else {
+            console.warn(`[v0] No benchmark found for answer value "${a}" in question ${questionId}`)
+          }
           return benchmark?.score || 0
         })
         .filter((s: number) => s > 0)
@@ -62,7 +75,14 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
     } else {
       // Single answer
       const benchmark = relevantBenchmarks.find((b: any) => b.answer_value === answer)
-      achievedScore = benchmark?.score || 0
+      if (benchmark) {
+        matchedBenchmark = benchmark
+        achievedScore = benchmark.score
+      } else {
+        console.warn(`[v0] No benchmark found for answer value "${answer}" in question ${questionId}. Available benchmarks:`, 
+          relevantBenchmarks.map((b: any) => b.answer_value))
+        achievedScore = 0
+      }
       answerValue = answer as string
     }
 
@@ -82,7 +102,6 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
     })
 
     // Store in database for per-question tracking
-    // Note: For multiple choice answers, we store as JSON string for database compatibility
     const answerValueForDb = Array.isArray(answerValue) 
       ? JSON.stringify(answerValue) 
       : (answerValue || '')
@@ -99,7 +118,7 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
         updated_at: new Date().toISOString(),
       })
 
-    // Category/section rollup (optional; depends on benchmarks having a category)
+    // Category/section rollup
     const category = relevantBenchmarks.find((b: any) => b?.category)?.category
     if (category) {
       if (!categoryScores[category]) categoryScores[category] = { total: 0, count: 0 }
@@ -121,7 +140,7 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
     categoryAverages[cat] = agg.count ? Math.round(agg.total / agg.count) : 0
   }
 
-  // Store evaluation results in cache with detailed breakdown
+  // Store evaluation results in cache
   const { error: cacheError } = await supabase
     .from('evaluation_results_cache')
     .upsert({
@@ -152,60 +171,40 @@ async function calculateEvaluation(supabase: any, submissionId: string, answers:
 }
 
 function generateRecommendations(score: number): string {
-  if (score >= 80) {
-    return 'Sehr gute Verkaufs-Readiness: Sie sind gut positioniert – nächste Optimierungen bringen schnell messbare Effekte.'
-  } else if (score >= 60) {
-    return 'Gute Verkaufs-Readiness: Solide Basis – mit gezielten Anpassungen lässt sich der Abschluss- und Lead-Flow verbessern.'
-  } else if (score >= 40) {
-    return 'Mittlere Verkaufs-Readiness: Es gibt klare Hebel – strukturierte Maßnahmen erhöhen Conversion und Konsistenz.'
-  } else {
-    return 'Niedrige Verkaufs-Readiness: Wir empfehlen, die Grundlagen (Angebot, Zielgruppe, Prozess) zuerst sauber zu definieren.'
-    return 'Sehr gut: Ihr Vertrieb ist stark aufgestellt – gezielte Optimierungen bringen schnell Wirkung.'
-  } else if (score >= 60) {
-    return 'Gut: Solide Basis – mit klaren Maßnahmen steigern Sie Abschlussquote und Prozessqualität.'
-  } else if (score >= 40) {
-    return 'Mittel: Es gibt mehrere Hebel – strukturierte Schritte erhöhen Konsistenz und Conversion.'
-  } else {
-    return 'Ausbaufähig: Wir empfehlen, Angebot/Zielgruppe/Prozess zuerst sauber zu definieren und zu standardisieren.'
-  }
+  if (score >= 80) return 'Sehr gute Verkaufs-Readiness: Sie sind gut positioniert – nächste Optimierungen bringen schnell messbare Effekte.'
+  if (score >= 60) return 'Gute Verkaufs-Readiness: Solide Basis – mit gezielten Anpassungen lässt sich der Abschluss- und Lead-Flow verbessern.'
+  if (score >= 40) return 'Mittlere Verkaufs-Readiness: Es gibt klare Hebel – strukturierte Maßnahmen erhöhen Conversion und Konsistenz.'
+  return 'Niedrige Verkaufs-Readiness: Wir empfehlen, die Grundlagen (Angebot, Zielgruppe, Prozess) zuerst sauber zu definieren.'
 }
 
 function generateGermanGreeting(title: string | null, firstName: string | null, lastName: string | null): string {
-  // Formal: "Sehr geehrte(r) [Title] [Last Name]"
   if (title && lastName) {
     const titleText = title === 'Herr' ? 'geehrter' : 'geehrte'
     return `Sehr ${titleText} ${lastName}`
   }
-  // Informal: "Hallo [First Name]"
-  if (firstName) {
-    return `Hallo ${firstName}`
-  }
-  // Fallback
+  if (firstName) return `Hallo ${firstName}`
   return 'Hallo'
 }
+
+// --- Main API Handler ---
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const participantEmail = body.participant_email
-    const title = body.title || null // 'Herr' | 'Frau' | null
+    const title = body.title || null
     const firstName = body.first_name || null
     const lastName = body.last_name || null
     const answers = body.answers || body
 
-    // Construct full name for backward compatibility
     const participantName = firstName && lastName 
       ? `${firstName} ${lastName}`.trim()
       : body.participant_name || null
 
     console.log(body)
 
-    // Validate required fields
     if (!participantEmail || !answers || Object.keys(answers).length === 0) {
-      return NextResponse.json(
-        { error: 'Email and answers are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Email and answers are required' }, { status: 400 })
     }
 
     // Create Supabase client
@@ -215,15 +214,12 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
         cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
+          getAll() { return cookieStore.getAll() },
           setAll(cookiesToSet: any[]) {
             try {
-              cookiesToSet.forEach(({ name, value, options }: any) =>
-              ;(cookiesToSet as any[]).forEach(({ name, value, options }: any) =>
+              cookiesToSet.forEach(({ name, value, options }: any) => {
                 cookieStore.set(name, value, options)
-              )
+              })
             } catch (error) {
               console.error('[v0] Error setting cookies:', error)
             }
@@ -232,8 +228,7 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Insert quiz submission with email
-    // Prevent accidental duplicate spam (same email submitted repeatedly)
+    // Check for existing submission to prevent duplicates
     const { data: existingSubmission } = await supabase
       .from('quiz_submissions')
       .select('id, submitted_at')
@@ -243,12 +238,10 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (existingSubmission?.id) {
-      return NextResponse.json(
-        { error: 'A submission with this email already exists' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'A submission with this email already exists' }, { status: 409 })
     }
 
+    // Insert new submission
     const { data: submission, error: submissionError } = await supabase
       .from('quiz_submissions')
       .insert({
@@ -267,28 +260,20 @@ export async function POST(request: NextRequest) {
 
     if (submissionError) {
       console.error('[v0] Database error:', submissionError)
-      return NextResponse.json(
-        { error: 'Failed to submit survey' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to submit survey' }, { status: 500 })
     }
 
     const submissionId = submission?.[0]?.id
     if (!submissionId) {
-      return NextResponse.json(
-        { error: 'Failed to get submission ID' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to get submission ID' }, { status: 500 })
     }
 
-    // Calculate evaluation automatically
+    // Calculate evaluation
     const evaluation = await calculateEvaluation(supabase, submissionId, answers)
 
-    // Send partial report email automatically (direct call, no internal HTTP)
+    // --- Send Partial Report Email ---
     try {
-    // Send partial evaluation email automatically (direct Resend call + audit log)
-    try {
-      // Load cached evaluation details for richer email content (category breakdown + recommendation)
+      // Load cached evaluation details
       const { data: cached } = await supabase
         .from('evaluation_results_cache')
         .select('total_score, section_scores, recommendations')
@@ -296,36 +281,30 @@ export async function POST(request: NextRequest) {
         .single()
 
       const totalScore = cached?.total_score ?? evaluation.totalScore
-      const byCategory = (cached?.section_scores as any)?.byCategory as
-        | Record<string, number>
-        | undefined
+      const byCategory = (cached?.section_scores as any)?.byCategory as Record<string, number> | undefined
       const recommendationText = cached?.recommendations as string | undefined
 
       const categoryHtml = byCategory
         ? `
           <div style="margin: 20px 0;">
             <h3 style="margin: 0 0 10px 0;">Bereiche</h3>
-            <h3 style="margin: 0 0 10px 0;">Teilbereiche</h3>
             <table style="width: 100%; border-collapse: collapse;">
               ${Object.entries(byCategory)
-                .map(
-                  ([cat, val]) => `
+                .map(([cat, val]) => `
                     <tr>
                       <td style="padding: 8px; border-bottom: 1px solid #eee;">${cat}</td>
                       <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;"><strong>${val}/100</strong></td>
                     </tr>
-                  `
-                )
-                .join('')}
+                  `).join('')}
             </table>
-          </div>
-        `
+          </div>`
         : ''
 
       const recommendationHtml = recommendationText
         ? `<p><strong>Kurze Einschätzung:</strong> ${recommendationText}</p>`
         : ''
 
+      const emailSubject = 'Fit4Sale – Vorläufige Auswertung';
       const html = `
         <!DOCTYPE html>
         <html>
@@ -333,9 +312,6 @@ export async function POST(request: NextRequest) {
             <style>
               body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
               .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background-color: #0f4c5c; color: white; padding: 20px; text-align: center; border-radius: 8px; }
-              .score-card { background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
-              .score { font-size: 48px; font-weight: bold; color: #0f4c5c; }
               .header { background-color: #0B1120; color: white; padding: 20px; text-align: center; border-radius: 8px; }
               .score-card { background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
               .score { font-size: 48px; font-weight: bold; color: #0B1120; }
@@ -349,9 +325,6 @@ export async function POST(request: NextRequest) {
                 <h1>Fit4Sale – Vorläufige Auswertung</h1>
               </div>
               <div class="content">
-                <p>Hallo,</p>
-                <p>vielen Dank für Ihre Teilnahme an unserer Sales-Umfrage. Wir haben Ihre Antworten ausgewertet und eine vorläufige Einschätzung erstellt.</p>
-
                 <p>${generateGermanGreeting(title, firstName, lastName)},</p>
                 <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check. Wir haben Ihre Angaben ausgewertet und eine vorläufige Auswertung erstellt.</p>
                 
@@ -372,13 +345,7 @@ export async function POST(request: NextRequest) {
               <div class="footer">
                 <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht direkt auf diese E-Mail.</p>
                 <p>Die vollständige Auswertung wird nach manueller Freigabe per E-Mail versendet.</p>
-                
                 <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
-                
-                <p>Freundliche Grüße<br>KMU-Beratungen</p>
-              </div>
-              <div class="footer">
-                <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
               </div>
             </div>
           </body>
@@ -387,12 +354,7 @@ export async function POST(request: NextRequest) {
 
       const emailResult = await sendResendEmail({
         to: participantEmail,
-        subject: 'Fit4Sale – Vorläufige Auswertung',
-        html,
-      const subject = 'Fit4Sale – Vorläufige Auswertung'
-      const emailResult = await sendResendEmail({
-        to: participantEmail,
-        subject,
+        subject: emailSubject,
         html,
       })
 
@@ -401,58 +363,41 @@ export async function POST(request: NextRequest) {
           .from('quiz_submissions')
           .update({ partial_evaluation_sent: true })
           .eq('id', submissionId)
-      }
-
-      await supabase.from('email_audit_logs').insert({
-        submission_id: submissionId,
-        recipient_email: participantEmail,
-        email_type: 'partial',
-        subject,
-        sender_email: 'aschwanden@kmu-beratungen.ch',
-        status: emailResult.success ? 'sent' : 'failed',
-        admin_notified: true,
-      })
-
-      await supabase.from('admin_logs').insert({
-        admin_id: null,
-        action: emailResult.success
-          ? `Vorläufige Auswertung per E-Mail versendet (${participantEmail})`
-          : `Fehler beim Versand der vorläufigen Auswertung (${participantEmail})`,
-        submission_id: submissionId,
-      })
-
-      if (!emailResult.success) {
-        console.error('[v0] Failed to send partial email:', emailResult.error)
-      } else {
-        await supabase
-          .from('quiz_submissions')
-          .update({ partial_evaluation_sent: true })
-          .eq('id', submissionId)
-
-        await supabase.from('email_audit_logs').insert({
-          submission_id: submissionId,
-          recipient_email: participantEmail,
-          email_type: 'partial',
-          subject: 'Fit4Sale – Vorläufige Auswertung',
-          sender_email: 'aschwanden@kmu-beratungen.ch',
-          status: 'sent',
-          admin_notified: true,
-        })
 
         await supabase.from('admin_logs').insert({
           admin_id: null,
           action: `Partial report email sent to participant (${participantEmail})`,
           submission_id: submissionId,
         })
+      } else {
+        console.error('[v0] Failed to send partial email:', emailResult.error)
+        
+        await supabase.from('admin_logs').insert({
+          admin_id: null,
+          action: `Fehler beim Versand der vorläufigen Auswertung (${participantEmail})`,
+          submission_id: submissionId,
+        })
       }
+
+      // Audit log always happens
+      await supabase.from('email_audit_logs').insert({
+        submission_id: submissionId,
+        recipient_email: participantEmail,
+        email_type: 'partial',
+        subject: emailSubject,
+        sender_email: 'aschwanden@kmu-beratungen.ch',
+        status: emailResult.success ? 'sent' : 'failed',
+        admin_notified: true,
+      })
+
     } catch (emailError) {
       console.error('[v0] Error sending partial email:', emailError)
     }
 
-    // Send confirmation email (direct Resend call + audit log)
+    // --- Send Confirmation Email (Simplified) ---
     try {
-      const subject = 'Fit4Sale – Sales-Check eingereicht'
-      const html = `
+      const confirmationSubject = 'Fit4Sale – Sales-Check eingereicht'
+      const confirmationHtml = `
         <!DOCTYPE html>
         <html>
           <head>
@@ -473,31 +418,30 @@ export async function POST(request: NextRequest) {
                 <p>${generateGermanGreeting(title, firstName, lastName)},</p>
                 <p>vielen Dank für Ihre Teilnahme am Fit4Sale Sales-Check.</p>
                 <p><strong>Ihre Eingabenummer:</strong> ${submissionId}</p>
-                <p>Sie erhalten eine <strong>vorläufige Auswertung</strong> automatisch per E-Mail. Die <strong>vollständige Auswertung</strong> wird nach manueller Freigabe versendet.</p>
-                <p>Bei Fragen: aschwanden@kmu-beratungen.ch</p>
+                <p>Sie erhalten eine <strong>vorläufige Auswertung</strong> automatisch per E-Mail.</p>
                 <p>Freundliche Grüße<br>KMU-Beratungen</p>
               </div>
               <div class="footer">
-                <p>Dies ist eine automatisierte Nachricht. Bitte antworten Sie nicht auf diese E-Mail.</p>
+                <p>Dies ist eine automatisierte Nachricht.</p>
               </div>
             </div>
           </body>
         </html>
       `
 
-      const emailResult = await sendResendEmail({
+      const confResult = await sendResendEmail({
         to: participantEmail,
-        subject,
-        html,
+        subject: confirmationSubject,
+        html: confirmationHtml,
       })
 
       await supabase.from('email_audit_logs').insert({
         submission_id: submissionId,
         recipient_email: participantEmail,
         email_type: 'confirmation',
-        subject,
+        subject: confirmationSubject,
         sender_email: 'aschwanden@kmu-beratungen.ch',
-        status: emailResult.success ? 'sent' : 'failed',
+        status: confResult.success ? 'sent' : 'failed',
         admin_notified: true,
       })
     } catch (emailError) {
@@ -507,18 +451,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Survey submitted successfully. A partial report email has been sent.',
         message: 'Eingabe erfolgreich. Vorläufige Auswertung wurde per E-Mail versendet.',
         submissionId,
         evaluation,
       },
       { status: 201 }
     )
+
   } catch (error) {
     console.error('[v0] Error processing survey:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

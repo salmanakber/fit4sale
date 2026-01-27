@@ -165,11 +165,6 @@ export default function EvaluationDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary"></div>
-          <p className="text-muted-foreground">Loading report...</p>
-        </div>
       <div className="flex h-[50vh] items-center justify-center flex-col gap-4 text-slate-500">
         <Loader2 className="h-8 w-8 animate-spin text-blue-900" />
         <p>Bericht wird geladen...</p>
@@ -180,8 +175,8 @@ export default function EvaluationDetailPage() {
   if (!evaluation) return null
 
   const recommendationsList = evaluation.personalized_recommendations
-    .split(' | ')
-    .filter((rec) => rec.trim().length > 0)
+    ? evaluation.personalized_recommendations.split(' | ').filter((rec) => rec.trim().length > 0)
+    : []
 
   const isApproved = !!evaluation.quiz_submissions.full_evaluation_approved
   const participantName = evaluation.quiz_submissions.patient_name
@@ -226,9 +221,8 @@ export default function EvaluationDetailPage() {
             onClick={handleSendEmail}
             disabled={isSendingEmail || !isApproved}
             size="sm"
-            title={!isApproved ? 'Approve first to send the full report email' : undefined}
-            className="bg-blue-900 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20"
             title={!isApproved ? 'Bitte zuerst freigeben' : undefined}
+            className="bg-blue-900 hover:bg-blue-800 text-white shadow-lg shadow-blue-900/20"
           >
              {isSendingEmail ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sende Email...</>
@@ -438,5 +432,5 @@ export default function EvaluationDetailPage() {
 
       </div>
     </div>
-  )
+  );
 }

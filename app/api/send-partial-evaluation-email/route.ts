@@ -136,9 +136,6 @@ export async function POST(request: NextRequest) {
     `
 
     // Send the email (participant)
-    const emailResult = await sendResendEmail({
-      to: participantEmail,
-      subject: 'Fit4Sale – Vorläufige Auswertung',
     const subject = 'Fit4Sale – Vorläufige Auswertung'
     const emailResult = await sendResendEmail({
       to: participantEmail,

@@ -13,7 +13,8 @@ import {
   Mail, 
   Loader2,
   Check,
-  User
+  User,
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -98,7 +99,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
       }
     } else {
       setAnswers({ ...answers, [questionId]: value });
-      // Optional: Auto-advance for radio buttons (feels nice on mobile)
+      // Optional: Auto-advance for radio buttons
       // setTimeout(() => handleNext(), 250);
     }
   };
@@ -169,8 +170,6 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
   // --- Loading State ---
   if (loading || !quizData) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-foreground">Umfrage wird geladen...</p>
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-blue-900" />
         <p className="text-slate-500 font-medium">Lade Quiz...</p>
@@ -196,13 +195,13 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
     <div className="min-h-screen bg-slate-50 flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans">
       
       {/* Mobile Header Logo */}
-      <div className="mb-6 w-full max-w-3xl flex justify-center md:justify-start">
+      <div className="mb-8 w-full max-w-3xl flex justify-center md:justify-start">
           <div className="relative h-12 w-32">
              <Image
                 src="/fit4sale-logo.png"
                 alt="Fit4Sale Logo"
                 fill
-                className="object-contain"
+                className="object-contain object-left"
               />
           </div>
       </div>
@@ -211,14 +210,14 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
         
         {/* Floating Progress Bar */}
         {!isIntro && (
-          <div className="mb-6 px-1 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="mb-8 px-1 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="flex justify-between items-center mb-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
               <span>
                  {isContactStep ? "Ihre Daten" : `Frage ${questionIndex + 1} von ${totalSteps}`}
               </span>
               <span>{Math.round(progressPercent)}%</span>
             </div>
-            <div className="h-2 w-full bg-white rounded-full overflow-hidden shadow-sm border border-slate-100">
+            <div className="h-2.5 w-full bg-slate-200/50 rounded-full overflow-hidden shadow-inner">
               <div
                 className="h-full bg-blue-900 rounded-full transition-all duration-700 ease-out"
                 style={{ width: `${progressPercent}%` }}
@@ -227,30 +226,9 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
           </div>
         )}
 
-        <Card className="p-8 md:p-12">
-          {isIntro ? (
-            // Intro Screen
-            <div className="space-y-6 text-center">
-              <div className="flex justify-center mb-6">
-                <img
-                  src="/fit4sale-logo.png"
-                  alt="Fit4Sale Logo"
-                  width={200}
-                  height={200}
-                  className="object-contain"
-                />
-              </div>
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                  {quizData.intro.title}
-                </h1>
-                <p className="text-lg text-foreground/80 mb-6">
-                  {quizData.intro.description}
-                </p>
-              </div>
         {/* Main Card */}
         <Card className="overflow-hidden rounded-3xl border-0 shadow-2xl shadow-blue-900/5 bg-white">
-          <div className="p-6 md:p-10 lg:p-12">
+          <div className="p-6 md:p-10 lg:p-12 min-h-[400px] flex flex-col justify-center">
             
             {/* --- SCREEN 1: INTRO --- */}
             {isIntro && (
@@ -264,45 +242,25 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   </p>
                 </div>
 
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-6 py-3 text-blue-800 font-semibold shadow-sm">
-                  <Clock className="h-5 w-5" />
+                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-6 py-2.5 text-blue-800 font-semibold text-sm">
+                  <Clock className="h-4 w-4" />
                   <span>{quizData.intro.estimated_time}</span>
                 </div>
 
-              <Button
-                onClick={handleNext}
-                size="lg"
-                className="mt-8 w-full md:w-auto"
-              >
-                Start
-              </Button>
-            </div>
-          ) : isEmailStep ? (
-            // Email Screen
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-3xl font-bold text-foreground mb-4">
-                  Ihre E-Mail-Adresse
-                </h2>
-                <p className="text-foreground/70 mb-6">
-                  Bitte geben Sie Ihre E-Mail-Adresse ein, damit wir Ihnen die Auswertung senden können.
-                </p>
-                <div className="w-full max-w-xs pt-4">
-                    <Button
-                        onClick={handleNext}
-                        size="lg"
-                        className="w-full h-14 text-lg font-bold bg-blue-900 hover:bg-blue-800 text-white shadow-xl shadow-blue-900/20 rounded-2xl transition-transform active:scale-95"
-                    >
-                        {quizData.intro.button_text || "Jetzt Starten"}
-                    </Button>
-                </div>
+                <Button
+                  onClick={handleNext}
+                  size="lg"
+                  className="mt-4 w-full md:w-auto min-w-[200px] h-14 text-lg font-bold bg-blue-900 hover:bg-blue-800 text-white shadow-xl shadow-blue-900/20 rounded-2xl transition-transform active:scale-95"
+                >
+                  {quizData.intro.button_text || "Jetzt Starten"}
+                </Button>
               </div>
             )}
 
             {/* --- SCREEN 2: CONTACT FORM --- */}
             {isContactStep && (
               <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
-                <div className="text-center md:text-left space-y-2">
+                <div className="text-center md:text-left space-y-2 border-b border-slate-100 pb-6">
                   <h2 className="text-2xl md:text-3xl font-bold text-blue-950">
                     Ihre Kontaktdaten
                   </h2>
@@ -311,99 +269,11 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   </p>
                 </div>
 
-              <div className="flex gap-4 mt-8">
-                <Button
-                  variant="outline"
-                  onClick={handlePrevious}
-                  className="flex-1 bg-transparent"
-                >
-                  Zurück
-                </Button>
-                <Button onClick={handleNext} className="flex-1">
-                  Weiter
-                </Button>
-              </div>
-            </div>
-          ) : currentQuestion ? (
-            // Question Screen
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-3xl font-bold text-foreground">
-                  {currentQuestion.question_text}
-                </h2>
-              </div>
-
-              <div className="space-y-4">
-                {currentQuestion.question_type === 'textarea' ? (
-                  <textarea
-                    value={typeof answers[currentQuestion.id] === 'string' ? answers[currentQuestion.id] : ''}
-                    onChange={(e) => {
-                      setAnswers({
-                        ...answers,
-                        [currentQuestion.id]: e.target.value,
-                      });
-                    }}
-                    placeholder="Geben Sie hier Ihre Antwort ein..."
-                    rows={6}
-                    className="w-full p-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                ) : (
-                  currentQuestion.quiz_answer_options.map((option) => (
-                    <div key={option.id} className="flex items-center">
-                      {currentQuestion.question_type === 'radio' ? (
-                        <>
-                          <input
-                            type="radio"
-                            id={option.id}
-                            name={currentQuestion.id}
-                            value={option.option_value}
-                            checked={
-                              answers[currentQuestion.id] === option.option_value
-                            }
-                            onChange={() =>
-                              handleAnswerChange(
-                                currentQuestion.id,
-                                option.option_value,
-                                false
-                              )
-                            }
-                            className="w-4 h-4 text-primary cursor-pointer"
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <input
-                            type="checkbox"
-                            id={option.id}
-                            value={option.option_value}
-                            checked={
-                              Array.isArray(answers[currentQuestion.id])
-                                ? (answers[currentQuestion.id] as string[]).includes(option.option_value)
-                                : false
-                            }
-                            onChange={() =>
-                              handleAnswerChange(
-                                currentQuestion.id,
-                                option.option_value,
-                                true
-                              )
-                            }
-                            className="w-4 h-4 text-primary cursor-pointer"
-                          />
-                        </>
-                      )}
-                      <label
-                        htmlFor={option.id}
-                        className="ml-3 text-foreground cursor-pointer flex-1 py-2"
-                      >
-                        {option.option_text}
-                      </label>
-                <div className="space-y-5">
-                  
+                <div className="space-y-6">
                   {/* Title Selection */}
                   <div>
-                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Anrede</label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <label className="text-sm font-bold text-slate-700 mb-2 block uppercase tracking-wide">Anrede</label>
+                    <div className="grid grid-cols-2 gap-4">
                       {['Herr', 'Frau'].map((option) => (
                         <div
                           key={option}
@@ -412,9 +282,9 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                             setFormErrors(prev => ({...prev, title: ''}));
                           }}
                           className={cn(
-                            "cursor-pointer rounded-xl border-2 py-3 px-4 text-center font-medium transition-all",
+                            "cursor-pointer rounded-xl border-2 py-3 px-4 text-center font-medium transition-all duration-200",
                             title === option 
-                              ? "border-blue-600 bg-blue-50 text-blue-900" 
+                              ? "border-blue-600 bg-blue-50 text-blue-900 shadow-sm" 
                               : "border-slate-100 bg-slate-50 text-slate-500 hover:bg-white hover:border-blue-200",
                             formErrors.title && !title && "border-red-300 bg-red-50"
                           )}
@@ -423,13 +293,13 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                         </div>
                       ))}
                     </div>
-                    {formErrors.title && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.title}</p>}
+                    {formErrors.title && <p className="text-xs text-red-500 mt-1.5 font-medium ml-1">{formErrors.title}</p>}
                   </div>
 
                   {/* Name Fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Vorname</label>
+                      <label className="text-sm font-bold text-slate-700 mb-2 block uppercase tracking-wide">Vorname</label>
                       <div className="relative">
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                         <input
@@ -440,17 +310,17 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                             setFormErrors(prev => ({...prev, firstName: ''}));
                           }}
                           className={cn(
-                            "w-full pl-12 pr-4 h-14 bg-slate-50 border-2 rounded-xl focus:outline-none transition-all text-lg",
-                            formErrors.firstName ? "border-red-300 bg-red-50" : "border-slate-100 focus:border-blue-600 focus:bg-white"
+                            "w-full pl-12 pr-4 h-14 bg-slate-50 border-2 rounded-xl focus:outline-none transition-all text-lg font-medium text-slate-900",
+                            formErrors.firstName ? "border-red-300 bg-red-50" : "border-slate-100 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-50/50"
                           )}
                           placeholder="Max"
                         />
                       </div>
-                      {formErrors.firstName && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.firstName}</p>}
+                      {formErrors.firstName && <p className="text-xs text-red-500 mt-1.5 font-medium ml-1">{formErrors.firstName}</p>}
                     </div>
 
                     <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Nachname</label>
+                      <label className="text-sm font-bold text-slate-700 mb-2 block uppercase tracking-wide">Nachname</label>
                       <input
                         type="text"
                         value={lastName}
@@ -459,20 +329,20 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                           setFormErrors(prev => ({...prev, lastName: ''}));
                         }}
                         className={cn(
-                          "w-full px-4 h-14 bg-slate-50 border-2 rounded-xl focus:outline-none transition-all text-lg",
-                          formErrors.lastName ? "border-red-300 bg-red-50" : "border-slate-100 focus:border-blue-600 focus:bg-white"
+                          "w-full px-4 h-14 bg-slate-50 border-2 rounded-xl focus:outline-none transition-all text-lg font-medium text-slate-900",
+                          formErrors.lastName ? "border-red-300 bg-red-50" : "border-slate-100 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-50/50"
                         )}
                         placeholder="Mustermann"
                       />
-                      {formErrors.lastName && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.lastName}</p>}
+                      {formErrors.lastName && <p className="text-xs text-red-500 mt-1.5 font-medium ml-1">{formErrors.lastName}</p>}
                     </div>
                   </div>
 
                   {/* Email Field */}
                   <div>
-                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">E-Mail-Adresse</label>
+                    <label className="text-sm font-bold text-slate-700 mb-2 block uppercase tracking-wide">E-Mail-Adresse</label>
                     <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                       <input
                         type="email"
                         value={email}
@@ -482,13 +352,17 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && handleNext()}
                         className={cn(
-                            "w-full pl-12 pr-4 h-14 bg-slate-50 border-2 rounded-xl focus:outline-none transition-all text-lg",
-                            formErrors.email ? "border-red-300 bg-red-50" : "border-slate-100 focus:border-blue-600 focus:bg-white"
+                            "w-full pl-12 pr-4 h-14 bg-slate-50 border-2 rounded-xl focus:outline-none transition-all text-lg font-medium text-slate-900",
+                            formErrors.email ? "border-red-300 bg-red-50" : "border-slate-100 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-50/50"
                         )}
                         placeholder="name@beispiel.de"
                       />
                     </div>
-                    {formErrors.email && <p className="text-xs text-red-500 mt-1 ml-1">{formErrors.email}</p>}
+                    {formErrors.email && <p className="text-xs text-red-500 mt-1.5 font-medium ml-1">{formErrors.email}</p>}
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Wir geben Ihre Daten nicht weiter.
+                    </p>
                   </div>
                 </div>
 
@@ -496,14 +370,13 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   <Button
                     variant="ghost"
                     onClick={handlePrevious}
-                    className="h-14 px-6 text-slate-500 hover:text-slate-900 rounded-xl"
+                    className="h-14 px-6 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl font-medium"
                   >
-                    {submitting ? 'Wird eingereicht...' : 'Absenden'}
                     Zurück
                   </Button>
                   <Button 
                     onClick={handleNext} 
-                    className="flex-1 h-14 bg-blue-900 hover:bg-blue-800 text-white text-lg font-semibold rounded-xl shadow-lg shadow-blue-900/10"
+                    className="flex-1 h-14 bg-blue-900 hover:bg-blue-800 text-white text-lg font-bold rounded-xl shadow-lg shadow-blue-900/10 transition-transform active:scale-[0.98]"
                   >
                     Weiter <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -517,8 +390,8 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                 
                 {/* Question Header */}
                 <div className="space-y-4">
-                    <span className="inline-block text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-wide">
-                        {currentQuestion.question_type === 'radio' ? 'Bitte wählen Sie eine Option' : 'Mehrfachauswahl möglich'}
+                    <span className="inline-block text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-wide border border-blue-100">
+                        {currentQuestion.question_type === 'radio' ? 'Einzelauswahl' : (currentQuestion.question_type === 'textarea' ? 'Freitext' : 'Mehrfachauswahl')}
                     </span>
                     <h2 className="text-2xl md:text-3xl font-bold text-blue-950 leading-snug">
                        {currentQuestion.question_text}
@@ -529,12 +402,12 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                 <div className="space-y-3">
                   {currentQuestion.question_type === 'textarea' ? (
                     <textarea
-                        value={typeof answers[currentQuestion.id] === 'string' ? answers[currentQuestion.id] : ''}
+                        value={typeof answers[currentQuestion.id] === 'string' ? answers[currentQuestion.id] as string : ''}
                         onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
                         autoFocus
                         placeholder="Tippen Sie hier..."
                         rows={6}
-                        className="w-full p-5 text-lg bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-50 transition-all resize-none text-slate-900"
+                        className="w-full p-5 text-lg bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-50 transition-all resize-none text-slate-900 placeholder:text-slate-400"
                     />
                   ) : (
                     <div className="grid grid-cols-1 gap-3">
@@ -548,7 +421,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                                     key={option.id}
                                     onClick={() => handleAnswerChange(currentQuestion.id, option.option_value, currentQuestion.question_type !== 'radio')}
                                     className={cn(
-                                        "group relative flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 select-none active:scale-[0.99]",
+                                        "group relative flex items-center p-4 md:p-5 border-2 rounded-2xl cursor-pointer transition-all duration-200 select-none active:scale-[0.99]",
                                         isSelected 
                                             ? "border-blue-600 bg-blue-50/60 shadow-inner" 
                                             : "border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50 hover:shadow-sm"
@@ -586,7 +459,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   <Button
                     variant="ghost"
                     onClick={handlePrevious}
-                    className="h-14 w-14 p-0 rounded-2xl text-slate-400 hover:text-slate-900 hover:bg-slate-100"
+                    className="h-14 w-14 p-0 rounded-2xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
                   >
                     <ArrowLeft className="h-6 w-6" />
                   </Button>
@@ -595,7 +468,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                     <Button
                       onClick={handleSubmit}
                       disabled={submitting}
-                      className="flex-1 h-14 bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold rounded-2xl shadow-lg shadow-emerald-900/20"
+                      className="flex-1 h-14 bg-emerald-600 hover:bg-emerald-700 text-white text-lg font-bold rounded-2xl shadow-lg shadow-emerald-900/20 transition-all hover:-translate-y-0.5"
                     >
                       {submitting ? (
                         <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verarbeite...</>
@@ -606,7 +479,7 @@ export function StepByStepQuiz({ onSubmit }: { onSubmit: (answers: any) => void 
                   ) : (
                     <Button 
                         onClick={handleNext} 
-                        className="flex-1 h-14 bg-blue-900 hover:bg-blue-800 text-white text-lg font-bold rounded-2xl shadow-lg shadow-blue-900/20"
+                        className="flex-1 h-14 bg-blue-900 hover:bg-blue-800 text-white text-lg font-bold rounded-2xl shadow-lg shadow-blue-900/20 transition-all hover:-translate-y-0.5"
                     >
                       Weiter
                     </Button>

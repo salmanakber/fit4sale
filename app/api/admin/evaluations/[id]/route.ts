@@ -48,6 +48,8 @@ export async function GET(
       )
     }
 
+    console.log(id)
+
     // Fetch the evaluation with related submission
     const { data: evaluation, error } = await supabase
       .from('evaluation_results')
@@ -58,10 +60,21 @@ export async function GET(
          quiz_submissions(patient_name, patient_email, participant_email, full_evaluation_approved, approved_by_admin, approved_at)`
       )
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
-    if (error || !evaluation) {
+      console.log('query data', evaluation)
+      console.log('query error', error)
+
+    // Handle "no rows found" error (PGRST116) or other errors
+    if (error && error.code !== 'PGRST116') {
       console.error('[v0] Database error:', error)
+      return NextResponse.json(
+        { error: 'Database error occurred' },
+        { status: 500 }
+      )
+    }
+
+    if (!evaluation) {
       return NextResponse.json(
         { error: 'Evaluation not found' },
         { status: 404 }
@@ -75,7 +88,7 @@ export async function GET(
   } catch (error) {
     console.error('[v0] Error fetching evaluation:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error. ' },
       { status: 500 }
     )
   }

@@ -49,4 +49,3 @@ export async function sendResendEmail(args: {
     return { success: false as const, error: String(error) }
   }
 }
-
