@@ -29,8 +29,6 @@ export async function sendResendEmail(args: {
       }),
     })
 
-    console.log('[v0] Resend API response status:', response.status)
-    return { success: response.ok as const }
     const payload = await response.json().catch(() => null)
     console.log('[v0] Resend API response status:', response.status, payload)
 
