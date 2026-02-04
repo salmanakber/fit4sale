@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js' // Import standard client for pure admin
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -16,99 +17,93 @@ export async function GET(
 
     const { id } = await params
 
-    // Initialize Supabase with SERVICE ROLE to bypass RLS policies
-    const supabase = createServerClient(
+    // 1. PURE ADMIN CLIENT (Bypasses all RLS and Cookie issues guaranteed)
+    const adminSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
-        cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll(cookiesToSet: any[]) {
-            cookiesToSet.forEach(({ name, value, options }: any) =>
-              cookieStore.set(name, value, options)
-            )
-          },
-        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        }
       }
     )
 
-    // 1. Fetch Submission Info
-    const { data: submission, error: subError } = await supabase
+    // 2. Fetch Submission Name
+    const { data: submission } = await adminSupabase
       .from('quiz_submissions')
-      .select('patient_name, first_name, id')
+      .select('patient_name, first_name')
       .eq('id', id)
       .single()
 
-    if (subError || !submission) {
-      return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
-    }
-
-    // 2. Fetch Stored Results
-    const { data: storedResults, error: resError } = await supabase
+    // 3. Fetch Results
+    const { data: storedResults } = await adminSupabase
       .from('question_benchmark_results')
       .select('*')
       .eq('submission_id', id)
 
-    if (resError) {
-      return NextResponse.json({ error: 'Error fetching results' }, { status: 500 })
-    }
-
-    // 3. Fetch All Benchmarks 
-    const { data: allBenchmarks } = await supabase
+    // 4. Fetch All Benchmarks
+    const { data: allBenchmarks } = await adminSupabase
       .from('benchmarks')
       .select('id, question_id, score')
 
     // --- ID Resolution ---
-
-    // A. Identify all unique Question IDs involved
     const relevantQuestionIds = new Set<string>()
 
     storedResults?.forEach((res: any) => {
-      if (res.question_id) {
-        relevantQuestionIds.add(String(res.question_id))
-      }
+      if (res.question_id) relevantQuestionIds.add(String(res.question_id))
       else if (res.benchmark_id && allBenchmarks) {
         const bDef = allBenchmarks.find((b: any) => String(b.id) === String(res.benchmark_id))
-        if (bDef?.question_id) {
-          relevantQuestionIds.add(String(bDef.question_id))
-        }
+        if (bDef?.question_id) relevantQuestionIds.add(String(bDef.question_id))
       }
     })
 
     const idsToFetch = Array.from(relevantQuestionIds).filter(Boolean)
 
-    // B. Fetch Question Names (SMART FALLBACK STRATEGY)
+    // --- AGGRESSIVE QUESTION FETCHING ---
     let questionMap = new Map<string, any>()
+    let debugSampleRow = null
+    let tableNameUsed = 'none'
 
     if (idsToFetch.length > 0) {
+      // Strategy: Fetch raw rows first, then figure out which column holds the text
 
-      // Attempt 1: Try 'quiz_questions' table
-      const { data: quizQuestionsData } = await supabase
+      // Attempt 1: 'quiz_questions'
+      let { data: questionsData, error: qError } = await adminSupabase
         .from('quiz_questions')
-        .select('id, question_text, label')
+        .select('*') // Fetch ALL columns to debug
         .in('id', idsToFetch)
 
-      if (quizQuestionsData) {
-        quizQuestionsData.forEach((q: any) => questionMap.set(String(q.id), q))
+      if (!qError && questionsData && questionsData.length > 0) {
+        tableNameUsed = 'quiz_questions'
+      } else {
+        // Attempt 2: 'questions'
+        const { data: qData2, error: qError2 } = await adminSupabase
+          .from('questions')
+          .select('*')
+          .in('id', idsToFetch)
+
+        if (!qError2 && qData2 && qData2.length > 0) {
+          questionsData = qData2
+          tableNameUsed = 'questions'
+        }
       }
 
-      // Attempt 2: If we are missing names, try 'questions' table
-      // (This fixes the issue if the data is actually in the 'questions' table)
-      const missingIds = idsToFetch.filter(id => !questionMap.has(id))
-
-      if (missingIds.length > 0) {
-        const { data: standardQuestionsData } = await supabase
-          .from('questions')
-          .select('id, question_text, label')
-          .in('id', missingIds)
-
-        if (standardQuestionsData) {
-          standardQuestionsData.forEach((q: any) => questionMap.set(String(q.id), q))
-        }
+      // Process Found Questions
+      if (questionsData && questionsData.length > 0) {
+        questionsData.forEach((q: any) => {
+          // Auto-detect the text column
+          const text = q.question_text || q.question || q.title || q.label || q.text || q.name || 'Untitled'
+          questionMap.set(String(q.id), { ...q, resolved_text: text })
+        })
+      } else {
+        // DEBUGGING: If we found nothing, fetch ONE row from quiz_questions to see the schema
+        const { data: sample } = await adminSupabase.from('quiz_questions').select('*').limit(1)
+        if (sample && sample.length > 0) debugSampleRow = sample[0]
       }
     }
 
-    // C. Group Benchmarks by Question (for max score calc)
+    // --- Construction ---
     const benchmarksByQuestion: Record<string, any[]> = {}
     allBenchmarks?.forEach((b: any) => {
       const bQId = String(b.question_id)
@@ -116,22 +111,17 @@ export async function GET(
       benchmarksByQuestion[bQId].push(b)
     })
 
-    // --- Report Construction ---
-
     const processedResults: Record<string, { achieved: number, isSelected: boolean }> = {}
 
     storedResults?.forEach((res: any) => {
       let qId: string | null = res.question_id ? String(res.question_id) : null
-
       if (!qId && res.benchmark_id && allBenchmarks) {
         const bDef = allBenchmarks.find((b: any) => String(b.id) === String(res.benchmark_id))
         qId = bDef?.question_id ? String(bDef.question_id) : null
       }
 
       if (qId) {
-        if (!processedResults[qId]) {
-          processedResults[qId] = { achieved: 0, isSelected: false }
-        }
+        if (!processedResults[qId]) processedResults[qId] = { achieved: 0, isSelected: false }
 
         let scoreVal = res.score
         if (scoreVal === undefined && res.benchmark_id && allBenchmarks) {
@@ -148,32 +138,34 @@ export async function GET(
       const qStats = processedResults[qId]
       const qDef = questionMap.get(qId)
       const potentialBenchmarks = benchmarksByQuestion[qId] || []
-
       const maxScore = Math.max(0, ...potentialBenchmarks.map((b) => b.score || 0))
 
       return {
         question_id: qId,
-        question_name: qDef?.question_text || qDef?.label || 'Unknown Question Name',
+        question_name: qDef?.resolved_text || 'Unknown Question Name',
         achieved_score: qStats.achieved,
         benchmark_score: maxScore,
         is_selected_benchmark: qStats.isSelected,
-        // Removed 'alldata' to clean up response, but kept name logic
       }
     })
 
     return NextResponse.json({
       submission_id: id,
-      submission_name: submission.patient_name || submission.first_name,
+      submission_name: submission?.patient_name || submission?.first_name || 'Participant',
       benchmark_data: finalReport,
       debug: {
-        total_ids_searched: idsToFetch.length,
+        table_used: tableNameUsed,
+        ids_searched: idsToFetch.length,
         names_found: questionMap.size,
-        missing_names: idsToFetch.length - questionMap.size
+        // IF THIS IS NOT NULL, IT SHOWS YOU THE CORRECT COLUMN NAMES:
+        sample_row_from_db: debugSampleRow,
+        // IF THIS IS EMPTY, YOUR IDS DO NOT EXIST IN DB:
+        missing_ids_example: idsToFetch.length > 0 && questionMap.size === 0 ? idsToFetch[0] : null
       }
     })
 
   } catch (error) {
-    console.error('[v0] Error generating benchmark report:', error)
+    console.error('Error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
