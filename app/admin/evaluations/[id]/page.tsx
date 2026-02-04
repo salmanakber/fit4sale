@@ -11,10 +11,9 @@ import {
   CheckCircle2, 
   User, 
   Mail, 
-  Calendar, 
+  Clock, 
   Activity, 
   Zap, 
-  Clock, 
   AlertTriangle, 
   FileText,
   ShieldCheck,
@@ -132,6 +131,8 @@ export default function EvaluationDetailPage() {
     }
   }
 
+  // --- Helper Components ---
+
   const ScoreCard = ({ score, label, icon: Icon, colorClass }: { score: number; label: string, icon: any, colorClass: string }) => (
     <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
@@ -163,6 +164,33 @@ export default function EvaluationDetailPage() {
         </div>
     </div>
   )
+
+  // --- MISSING COMPONENTS CREATED HERE ---
+  
+  const ScoreDisplay = ({ score, label }: { score: number; label: string }) => (
+    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h4 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-500">{label}</h4>
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-bold text-slate-900">{score}</span>
+        <span className="text-sm text-slate-400">/ 100</span>
+      </div>
+      <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
+        <div 
+          className="h-full rounded-full bg-blue-600 transition-all duration-500"
+          style={{ width: `${score}%` }} 
+        />
+      </div>
+    </div>
+  )
+
+  const SectionField = ({ label, value }: { label: string; value: string | null | undefined }) => (
+    <div className="mb-3 last:mb-0">
+      <dt className="text-xs font-semibold uppercase text-slate-500">{label}</dt>
+      <dd className="mt-1 text-sm text-slate-900">{value || '-'}</dd>
+    </div>
+  )
+
+  // ---------------------------------------
 
   if (isLoading) {
     return (
@@ -306,68 +334,29 @@ export default function EvaluationDetailPage() {
                     <p className="text-slate-400 italic">Keine spezifischen Empfehlungen vorhanden.</p>
                 )}
             </div>
+
+            {/* --- NOTE: This section below duplicates info from above but uses the requested components --- */}
+            
+            {/* Additional Score Display */}
+            <div className="grid gap-6 md:grid-cols-2">
+                <ScoreDisplay score={evaluation.fitness_level_score} label="Score A" />
+                <ScoreDisplay score={evaluation.readiness_score} label="Score B" />
+            </div>
+
+            {/* Additional Details */}
+            <div className="rounded-lg border border-slate-200 bg-white p-8">
+                <h3 className="mb-4 text-lg font-semibold text-slate-900">Details (Zusammenfassung)</h3>
+                <SectionField label="Summary" value={evaluation.recommended_program} />
+                <SectionField label="Category" value={evaluation.intensity_level} />
+                <SectionField label="Timeline" value={evaluation.program_duration} />
+                <SectionField label="Notes" value={evaluation.special_modifications} />
+                <SectionField label="Risks / Blockers" value={evaluation.safety_concerns} />
+            </div>
+            
+            {/* ----------------------------------------------------------------------------------------- */}
+
         </div>
 
-        {/* Scores */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <ScoreDisplay score={evaluation.fitness_level_score} label="Score A" />
-          <ScoreDisplay score={evaluation.readiness_score} label="Score B" />
-        </div>
-
-        {/* Details */}
-        <div className="rounded-lg border border-border bg-card p-8">
-          <h3 className="mb-4 text-lg font-semibold text-foreground">Details</h3>
-          <SectionField label="Summary" value={evaluation.recommended_program} />
-          <SectionField label="Category" value={evaluation.intensity_level} />
-          <SectionField label="Timeline" value={evaluation.program_duration} />
-          <SectionField label="Notes" value={evaluation.special_modifications} />
-          <SectionField label="Risks / Blockers" value={evaluation.safety_concerns} />
-        </div>
-
-        {/* Recommendations */}
-        <div className="rounded-lg border border-border bg-card p-8">
-          <h3 className="mb-4 text-lg font-semibold text-foreground">
-            Personalized Recommendations
-          </h3>
-          {recommendationsList.length > 0 ? (
-            <ul className="space-y-3">
-              {recommendationsList.map((rec, idx) => (
-                <li key={idx} className="flex gap-3 text-foreground">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                    {idx + 1}
-                  </div>
-                  <div>{rec.trim()}</div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground">No additional recommendations</p>
-          )}
-        </div>
-
-        {/* Participant Info */}
-        <div className="rounded-lg border border-border bg-card p-8">
-          <h3 className="mb-4 text-lg font-semibold text-foreground">Participant Information</h3>
-          <SectionField label="Name" value={evaluation.quiz_submissions.patient_name} />
-          <SectionField
-            label="Email"
-            value={
-              evaluation.quiz_submissions.patient_email ||
-              evaluation.quiz_submissions.participant_email ||
-              '-'
-            }
-          />
-          <SectionField
-            label="Report Created"
-            value={new Date(evaluation.evaluation_completed_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          />
-        </div>
         {/* RIGHT COLUMN: Sidebar Meta Data */}
         <div className="space-y-6">
             
