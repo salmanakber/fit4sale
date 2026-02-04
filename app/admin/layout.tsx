@@ -19,6 +19,7 @@ import {
   Zap,
   TrendingUp,
   // SettingsIcon <--- Removed invalid import
+
   
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
