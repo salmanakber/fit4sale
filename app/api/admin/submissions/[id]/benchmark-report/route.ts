@@ -41,7 +41,7 @@ export async function GET(
       }
     )
 
-    console.log('submission ___ Id', submission_id)
+    console.log('submission ___ Id', id)
 
     // Fetch submission
     const { data: submission } = await supabase
