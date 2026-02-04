@@ -45,6 +45,8 @@ const THEME = {
   dotPot: '#4d7c0f',     // Lime-700
 }
 
+
+
 export function BenchmarkReportChart({ submissionId }: BenchmarkReportChartProps) {
   const [data, setData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
