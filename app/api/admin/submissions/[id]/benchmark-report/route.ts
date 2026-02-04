@@ -10,7 +10,6 @@ export async function GET(
     const cookieStore = await cookies()
     const adminSession = cookieStore.get('admin_session')
 
-    // 1. Auth Check
     if (!adminSession?.value) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -32,7 +31,7 @@ export async function GET(
       }
     )
 
-    // 2. Fetch Submission (Just for name/email info)
+    // 1. Fetch Submission Info
     const { data: submission, error: subError } = await supabase
       .from('quiz_submissions')
       .select('patient_name, first_name, id')
@@ -43,101 +42,114 @@ export async function GET(
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
     }
 
-    // 3. Fetch The Stored Results (The Source of Truth)
-    // We want to see exactly what is in this table for this submission
+    // 2. Fetch Stored Results (Source of Truth)
     const { data: storedResults, error: resError } = await supabase
       .from('question_benchmark_results')
-      .select('*') // Gets benchmark_id, score, question_id, etc.
+      .select('*')
       .eq('submission_id', id)
 
     if (resError) {
-      console.error('Error fetching results:', resError)
-      return NextResponse.json({ error: 'Error fetching benchmark results' }, { status: 500 })
+      return NextResponse.json({ error: 'Error fetching results' }, { status: 500 })
     }
 
-    // 4. Fetch Definitions (Questions and Benchmarks)
-    // We fetch all because we need to calculate "Max Possible Score" for every question
-    const { data: allQuestions } = await supabase
-      .from('questions')
-      .select('id, question_text, label')
-
+    // 3. Fetch All Benchmarks 
+    // We need these to calculate the "Max Possible Score" and to find question_ids if missing in results
     const { data: allBenchmarks } = await supabase
       .from('benchmarks')
       .select('id, question_id, score')
 
-    // --- Data Processing ---
+    // --- ID Resolution & Mapping ---
 
-    // A. Create Map for Questions (ID -> Data)
-    const questionMap = new Map((allQuestions || []).map((q: any) => [q.id, q]))
+    // A. Identify all unique Question IDs involved
+    const relevantQuestionIds = new Set<string>()
 
-    // B. Group All Benchmarks by Question (to calculate max possible scores)
-    const benchmarksByQuestion: Record<string, any[]> = {}
-    if (allBenchmarks) {
-      for (const b of allBenchmarks) {
-        if (!benchmarksByQuestion[b.question_id]) benchmarksByQuestion[b.question_id] = []
-        benchmarksByQuestion[b.question_id].push(b)
+    storedResults?.forEach((res: any) => {
+      // Try to get ID from result row
+      if (res.question_id) {
+        relevantQuestionIds.add(res.question_id)
+      }
+      // Fallback: Try to find ID via benchmark_id
+      else if (res.benchmark_id && allBenchmarks) {
+        const bDef = allBenchmarks.find((b: any) => b.id === res.benchmark_id)
+        if (bDef?.question_id) {
+          relevantQuestionIds.add(bDef.question_id)
+        }
+      }
+    })
+
+    // B. Fetch Question Names from 'quiz_questions' using the IDs we found
+    let questionMap = new Map<string, any>()
+
+    if (relevantQuestionIds.size > 0) {
+      const { data: questionsData } = await supabase
+        .from('quiz_questions') // <--- FETCHING FROM QUIZ_QUESTIONS AS REQUESTED
+        .select('id, question_text, label')
+        .in('id', Array.from(relevantQuestionIds))
+
+      if (questionsData) {
+        questionMap = new Map(questionsData.map((q: any) => [q.id, q]))
       }
     }
 
-    // C. Process the Stored Results
-    // We assume 'storedResults' contains one row per benchmark hit. 
-    // Sometimes a single question has multiple rows if multiple options were selected.
+    // C. Group Benchmarks by Question (for max score calc)
+    const benchmarksByQuestion: Record<string, any[]> = {}
+    allBenchmarks?.forEach((b: any) => {
+      if (!benchmarksByQuestion[b.question_id]) benchmarksByQuestion[b.question_id] = []
+      benchmarksByQuestion[b.question_id].push(b)
+    })
 
-    // We group stored results by question_id first to handle multi-select summation
-    const resultsByQuestion: Record<string, { achieved: number, isSelected: boolean }> = {}
+    // --- Report Construction ---
+
+    // D. Group Results by Question ID to handle sums (multi-select)
+    const processedResults: Record<string, { achieved: number, isSelected: boolean }> = {}
 
     storedResults?.forEach((res: any) => {
-      // Assuming 'question_id' is in question_benchmark_results table. 
-      // If it's not, we must find it via the benchmark_id.
+      // Resolve Question ID again
       let qId = res.question_id
-
-      // Fallback: If question_id is missing in results table, find it via benchmark list
       if (!qId && res.benchmark_id && allBenchmarks) {
         const bDef = allBenchmarks.find((b: any) => b.id === res.benchmark_id)
         qId = bDef?.question_id
       }
 
       if (qId) {
-        if (!resultsByQuestion[qId]) {
-          resultsByQuestion[qId] = { achieved: 0, isSelected: false }
+        if (!processedResults[qId]) {
+          processedResults[qId] = { achieved: 0, isSelected: false }
         }
 
-        // Add up the scores (assuming stored 'score' column exists in results)
-        // If the table doesn't have 'score', look it up in definitions
-        let scoreToAdd = res.score
-        if (scoreToAdd === undefined && res.benchmark_id) {
-          const bDef = allBenchmarks?.find(b => b.id === res.benchmark_id)
-          scoreToAdd = bDef?.score || 0
+        // Resolve Score
+        let scoreVal = res.score
+        if (scoreVal === undefined && res.benchmark_id && allBenchmarks) {
+          const bDef = allBenchmarks.find((b: any) => b.id === res.benchmark_id)
+          scoreVal = bDef?.score || 0
         }
 
-        resultsByQuestion[qId].achieved += (scoreToAdd || 0)
-        resultsByQuestion[qId].isSelected = true
+        processedResults[qId].achieved += (scoreVal || 0)
+        processedResults[qId].isSelected = true
       }
     })
 
-    // D. Build Final Report Array
-    const finalReport = Object.keys(resultsByQuestion).map((qId) => {
-      const questionDef = questionMap.get(qId)
-      const questionStats = resultsByQuestion[qId]
+    // E. Map to Final Output Array
+    const finalReport = Object.keys(processedResults).map((qId) => {
+      const qStats = processedResults[qId]
+      const qDef = questionMap.get(qId) // <--- Get Name from the quiz_questions fetch
       const potentialBenchmarks = benchmarksByQuestion[qId] || []
 
-      // Calculate Max Possible Score for this question
+      // Calc max possible score for this question
       const maxScore = Math.max(0, ...potentialBenchmarks.map((b) => b.score || 0))
 
       return {
         question_id: qId,
-        question_name: questionDef?.question_text || questionDef?.label || 'Unknown Question',
-        achieved_score: questionStats.achieved,
+        question_name: qDef?.question_text || qDef?.label || 'Unknown Question Name',
+        achieved_score: qStats.achieved,
         benchmark_score: maxScore,
-        is_selected_benchmark: questionStats.isSelected // True because it existed in the results table
+        is_selected_benchmark: qStats.isSelected
       }
     })
 
     return NextResponse.json({
       submission_id: id,
       submission_name: submission.patient_name || submission.first_name,
-      benchmark_data: finalReport,
-      debug_count: storedResults?.length || 0 // Helpful to see if DB is returning rows
+      benchmark_data: finalReport
     })
 
   } catch (error) {
