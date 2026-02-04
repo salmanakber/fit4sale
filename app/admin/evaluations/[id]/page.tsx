@@ -12,9 +12,9 @@ import {
   User,
   Mail,
   Clock,
-  TrendingUp, // Sales icon
-  Briefcase,  // Business icon
-  AlertOctagon, // Risk icon
+  TrendingUp,
+  Briefcase,
+  AlertOctagon,
   FileBadge,
   ShieldCheck,
   Loader2,
@@ -25,14 +25,14 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// --- Types ---
+// --- Typen-Definitionen ---
 interface EvaluationDetail {
   id: string
   submission_id: string
-  fitness_level_score: number // Mapped to: Sales Performance
-  readiness_score: number // Mapped to: Closing Potential
-  recommended_program: string // Mapped to: Strategy
-  safety_concerns: string // Mapped to: Blockers
+  fitness_level_score: number // Wird als "Vertriebs-Performance" angezeigt
+  readiness_score: number // Wird als "Abschluss-Potenzial" angezeigt
+  recommended_program: string // Wird als "Strategie" angezeigt
+  safety_concerns: string // Wird als "Blockaden" angezeigt
   personalized_recommendations: string
   program_duration: string
   intensity_level: string
@@ -48,7 +48,7 @@ interface EvaluationDetail {
   }
 }
 
-// --- Premium Components ---
+// --- Premium Komponenten ---
 
 const KpiCard = ({ value, label, subLabel, icon: Icon, trendColor }: { value: number, label: string, subLabel: string, icon: any, trendColor: string }) => (
   <div className="relative overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-slate-200 transition-all hover:shadow-md">
@@ -65,7 +65,7 @@ const KpiCard = ({ value, label, subLabel, icon: Icon, trendColor }: { value: nu
         <Icon className={cn("h-6 w-6", trendColor)} />
       </div>
     </div>
-    {/* Progress Bar styled as a target meter */}
+    {/* Fortschrittsbalken im Stil eines Tachometers */}
     <div className="mt-4 h-1.5 w-full rounded-full bg-slate-100">
       <div
         className={cn("h-full rounded-full transition-all duration-1000", trendColor.replace('text-', 'bg-'))}
@@ -113,7 +113,7 @@ export default function EvaluationDetailPage() {
           router.push('/admin/evaluations')
         }
       } catch (error) {
-        console.error('[v0] Error fetching evaluation:', error)
+        console.error('[v0] Fehler beim Laden:', error)
         router.push('/admin/evaluations')
       } finally {
         setIsLoading(false)
@@ -136,10 +136,10 @@ export default function EvaluationDetailPage() {
       if (response.ok) alert('Report wurde erfolgreich gesendet.')
       else {
         const err = await response.json().catch(() => null)
-        alert(err?.error || 'Fehler beim Senden')
+        alert(err?.error || 'Fehler beim Senden der E-Mail')
       }
     } catch (error) {
-      alert('Fehler beim Senden')
+      alert('Technischer Fehler beim Senden')
     } finally {
       setIsSendingEmail(false)
     }
@@ -213,7 +213,7 @@ export default function EvaluationDetailPage() {
                 </div>
                 <p className="text-slate-400 text-sm mt-1 flex items-center gap-2">
                   <Mail className="h-3 w-3" />
-                  {evaluation.quiz_submissions.patient_email || evaluation.quiz_submissions.participant_email || 'Keine Email'}
+                  {evaluation.quiz_submissions.patient_email || evaluation.quiz_submissions.participant_email || 'Keine E-Mail'}
                   <span className="text-slate-600">|</span>
                   <Calendar className="h-3 w-3" />
                   {new Date(evaluation.evaluation_completed_at).toLocaleDateString('de-DE')}
@@ -232,7 +232,7 @@ export default function EvaluationDetailPage() {
                 )}
               >
                 {isApproved ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                {isApproved ? "Status: OK" : "Bericht Freigeben"}
+                {isApproved ? "Status: OK" : "Bericht freigeben"}
               </Button>
 
               <Button
@@ -241,7 +241,7 @@ export default function EvaluationDetailPage() {
                 className="bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-900/20 border-none"
               >
                 {isSendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                An Kunden Senden
+                An Kunden senden
               </Button>
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function EvaluationDetailPage() {
             trendColor="text-emerald-500"
           />
 
-          {/* Summary Card (Visual) */}
+          {/* Zusammenfassungs-Karte */}
           <div className="bg-slate-900 rounded-xl p-6 text-white shadow-lg flex flex-col justify-between border border-slate-700">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Empfohlene Strategie</p>
@@ -288,7 +288,7 @@ export default function EvaluationDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* LEFT: Detailed Report (2/3) */}
+          {/* LINKS: Detaillierter Bericht (2/3) */}
           <div className="lg:col-span-2 space-y-8">
 
             {/* Benchmark Chart */}
@@ -305,7 +305,7 @@ export default function EvaluationDetailPage() {
               <BenchmarkReportChart submissionId={evaluation.submission_id} />
             </div>
 
-            {/* Strategy Grid */}
+            {/* Strategie Grid */}
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
               <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
                 <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700 flex items-center gap-2">
@@ -315,12 +315,12 @@ export default function EvaluationDetailPage() {
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <StrategyItem label="Coaching Fokus" value={evaluation.recommended_program} icon={Target} />
                 <StrategyItem label="Laufzeit" value={evaluation.program_duration} icon={Clock} />
-                <StrategyItem label="Level" value={evaluation.intensity_level} icon={BarChart3} />
+                <StrategyItem label="Level / Intensität" value={evaluation.intensity_level} icon={BarChart3} />
                 <StrategyItem label="Anmerkungen" value={evaluation.special_modifications} icon={FileBadge} />
               </div>
             </div>
 
-            {/* Recommendations */}
+            {/* Handlungsempfehlungen */}
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
               <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                 <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700 flex items-center gap-2">
@@ -346,10 +346,10 @@ export default function EvaluationDetailPage() {
             </div>
           </div>
 
-          {/* RIGHT: Risks & Meta (1/3) */}
+          {/* RECHTS: Risiken & Metadaten (1/3) */}
           <div className="lg:col-span-1 space-y-6">
 
-            {/* Risk Box - High Visibility */}
+            {/* Risiko Box - Hohe Sichtbarkeit */}
             {evaluation.safety_concerns && (
               <div className="rounded-xl border border-red-100 bg-white shadow-sm overflow-hidden">
                 <div className="bg-red-50/50 px-5 py-3 border-b border-red-100 flex items-center gap-2">
@@ -366,10 +366,10 @@ export default function EvaluationDetailPage() {
               </div>
             )}
 
-            {/* CRM Data Card */}
+            {/* CRM Daten Karte */}
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
               <h4 className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-4">
-                Kontakt Details
+                Kontakt-Details
               </h4>
 
               <div className="flex items-center gap-4 mb-6">
@@ -384,7 +384,7 @@ export default function EvaluationDetailPage() {
 
               <div className="space-y-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase text-slate-400">Email Adresse</p>
+                  <p className="text-[10px] font-bold uppercase text-slate-400">E-Mail Adresse</p>
                   <p className="text-sm font-medium text-slate-900 truncate">
                     {evaluation.quiz_submissions.patient_email || evaluation.quiz_submissions.participant_email || '-'}
                   </p>
