@@ -56,7 +56,7 @@ export async function GET(
     const { data: questions } = await supabase.from('questions').select('*')
     const { data: benchmarks } = await supabase.from('benchmarks').select('*')
     const { data: selectedBenchmarks } = await supabase
-      .from('benchmark_selections')
+      .from('question_benchmark_results')
       .select('*')
       .eq('submission_id', id)
 
