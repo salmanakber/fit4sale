@@ -14,7 +14,7 @@ export async function sendResendEmail(args: {
   // const from = args.from || 'aschwanden@kmu-beratungen.ch'
   // Resend expects a verified sender. It's safest to use "Name <email@domain>" format.
   // See: https://resend.com/docs/send-with-nextjs
-  const from = args.from || 'KMU-Beratungen <aschwanden@kmu-beratungen.ch>'
+  const from = args.from || 'KMU-Beratungen <aschwanden@fit4sale.ch>'
 
   // Try to get API key from parameter, database, or environment variable
   let apiKey = args.apiKey || process.env.RESEND_API_KEY
