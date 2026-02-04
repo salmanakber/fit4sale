@@ -41,6 +41,8 @@ export async function GET(
       }
     )
 
+    console.log('submission ___ Id', submission_id)
+
     // Fetch submission
     const { data: submission } = await supabase
       .from('quiz_submissions')
