@@ -38,7 +38,8 @@ export function BenchmarkReportChart({ submissionId }: BenchmarkReportChartProps
           throw new Error('Failed to fetch benchmark data')
         }
         const result = await response.json()
-        
+        console.log(result)
+
         // Transform data for chart
         const chartData = result.benchmark_data.map((item: BenchmarkData) => ({
           name: item.question_name.substring(0, 30), // Truncate long names
@@ -104,8 +105,8 @@ export function BenchmarkReportChart({ submissionId }: BenchmarkReportChartProps
               data={data}
               margin={{ top: 20, right: 30, left: 20, bottom: 100 }}
             >
-              <CartesianGrid 
-                strokeDasharray="3 3" 
+              <CartesianGrid
+                strokeDasharray="3 3"
                 stroke={COLORS.grid}
                 vertical={true}
               />
@@ -130,26 +131,26 @@ export function BenchmarkReportChart({ submissionId }: BenchmarkReportChartProps
                 labelStyle={{ color: COLORS.text }}
                 cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
               />
-              <Legend 
+              <Legend
                 wrapperStyle={{ paddingTop: '20px' }}
                 iconType="square"
               />
-              
+
               {/* Achieved Score Bar */}
               <Bar dataKey="achieved" name="Achieved (IST)" fill={COLORS.achieved} radius={[4, 4, 0, 0]}>
                 {data.map((entry, index) => (
-                  <Cell 
+                  <Cell
                     key={`cell-achieved-${index}`}
                     fill={entry.isSelected ? '#dc2626' : COLORS.achieved}
                     opacity={entry.isSelected ? 1 : 0.7}
                   />
                 ))}
               </Bar>
-              
+
               {/* Benchmark Score Bar */}
               <Bar dataKey="benchmark" name="Benchmark (Potential)" fill={COLORS.benchmark} radius={[4, 4, 0, 0]}>
                 {data.map((entry, index) => (
-                  <Cell 
+                  <Cell
                     key={`cell-benchmark-${index}`}
                     fill={COLORS.benchmark}
                     opacity={0.8}
@@ -199,17 +200,15 @@ export function BenchmarkReportChart({ submissionId }: BenchmarkReportChartProps
                   </td>
                   <td className="border border-gray-200 px-4 py-2 text-center text-gray-700">{row.achieved}</td>
                   <td className="border border-gray-200 px-4 py-2 text-center text-gray-700">{row.benchmark}</td>
-                  <td className={`border border-gray-200 px-4 py-2 text-center font-semibold ${
-                    diff >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <td className={`border border-gray-200 px-4 py-2 text-center font-semibold ${diff >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {diff >= 0 ? '+' : ''}{diff}
                   </td>
                   <td className="border border-gray-200 px-4 py-2 text-center text-xs font-semibold">
-                    <span className={`px-2 py-1 rounded ${
-                      diff >= 0 
-                        ? 'bg-green-100 text-green-800' 
+                    <span className={`px-2 py-1 rounded ${diff >= 0
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
-                    }`}>
+                      }`}>
                       {status}
                     </span>
                   </td>
