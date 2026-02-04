@@ -6,6 +6,10 @@ export async function sendResendEmail(args: {
   html: string
   from?: string
   apiKey?: string
+  attachments?: Array<{
+    filename: string
+    content: Buffer | string
+  }>
 }) {
   // const from = args.from || 'aschwanden@kmu-beratungen.ch'
   // Resend expects a verified sender. It's safest to use "Name <email@domain>" format.
@@ -39,18 +43,28 @@ export async function sendResendEmail(args: {
   }
 
   try {
+    const emailBody: any = {
+      from,
+      to: args.to,
+      subject: args.subject,
+      html: args.html,
+    }
+
+    // Add attachments if provided
+    if (args.attachments && args.attachments.length > 0) {
+      emailBody.attachments = args.attachments.map((att) => ({
+        filename: att.filename,
+        content: typeof att.content === 'string' ? att.content : att.content.toString('base64'),
+      }))
+    }
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        from,
-        to: args.to,
-        subject: args.subject,
-        html: args.html,
-      }),
+      body: JSON.stringify(emailBody),
     })
 
     const payload = await response.json().catch(() => null)

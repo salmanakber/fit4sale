@@ -16,9 +16,9 @@ import {
   X,
   User,
   Settings,
-  Target,
+  Zap,
   TrendingUp,
-  Gear
+  SettingsIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -100,12 +100,12 @@ export default function AdminLayout({
     { name: 'Quiz-Verwaltung', href: '/admin/quiz', icon: FileText },
     { name: 'Eingaben', href: '/admin/submissions', icon: Inbox },
     { name: 'Auswertungen', href: '/admin/evaluations', icon: BarChart3 },
-    { name: 'Benchmarks', href: '/admin/benchmarks', icon: Target },
+    { name: 'Benchmarks', href: '/admin/benchmarks', icon: Zap },
     { name: 'Reporting', href: '/admin/reporting', icon: TrendingUp },
   ]
   
   const settingsItems = [
-    { name: 'Einstellungen', href: '/admin/settings', icon: Gear },
+    { name: 'Einstellungen', href: '/admin/settings', icon: SettingsIcon },
   ]
 
   // Sidebar Content Component (Reused for Mobile and Desktop)

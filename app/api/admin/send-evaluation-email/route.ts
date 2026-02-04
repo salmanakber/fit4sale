@@ -119,11 +119,39 @@ export async function POST(request: NextRequest) {
       specialModifications: evaluation.special_modifications || '',
     })
 
+    // Generate benchmark chart as PNG attachment
+    let attachments: Array<{ filename: string; content: Buffer }> = []
+    try {
+      const chartResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/submissions/${evaluation.submission_id}/generate-chart`,
+        {
+          method: 'GET',
+          headers: {
+            'Cookie': `admin_session=${adminSession.value}`,
+          },
+        }
+      )
+
+      if (chartResponse.ok) {
+        const chartBuffer = await chartResponse.arrayBuffer()
+        attachments.push({
+          filename: 'benchmark-report.png',
+          content: Buffer.from(chartBuffer),
+        })
+      } else {
+        console.warn('[v0] Failed to generate chart for attachment')
+      }
+    } catch (error) {
+      console.warn('[v0] Error generating chart attachment:', error)
+      // Continue sending email without attachment if chart generation fails
+    }
+
     // Send email
     const emailResult = await sendResendEmail({
       to: patientEmail,
       subject: emailTemplate.subject,
       html: emailTemplate.html,
+      attachments: attachments.length > 0 ? attachments : undefined,
     })
 
     if (!emailResult.success) {

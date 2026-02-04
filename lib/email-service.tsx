@@ -214,6 +214,11 @@ KMU-Beratungen
         ${data.safetyConcerns ? `<p><strong>Risks / Blockers:</strong> ${data.safetyConcerns}</p>` : ''}
       </div>
       
+      <div class="info-box" style="border-left-color: #2196F3; background-color: #e3f2fd;">
+        <p><strong>Benchmark Chart Attachment:</strong> You will find a detailed graphical comparison of your results (IST) versus the benchmarks (Potential) in the PDF attachment below. This chart shows your performance across all evaluated dimensions.</p>
+        <p><strong>Benchmark Grafik Anlage:</strong> Sie finden eine detaillierte grafische Darstellung Ihrer Ergebnisse (IST) im Vergleich zu den Benchmarks (Potenzial) in der Anlage. Das Diagramm zeigt Ihre Leistung in allen bewerteten Dimensionen.</p>
+      </div>
+
       <div class="recommendations">
         <div class="section-title">Recommendations</div>
       <p>Ihre Fit4Sale-Auswertung ist bereit (freigegeben). Hier sind Ihre Ergebnisse:</p>
