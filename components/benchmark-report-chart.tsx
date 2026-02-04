@@ -37,8 +37,7 @@ const THEME = {
   // IST (Your Result) - Red/Orange from image
   //okk
   lineIst: '#f97316',    // Orange-500
-  dotIst: '#c2410c',
-  gold: "#c23412b"     // Orange-700
+  dotIst: '#c2410c',   // Orange-700
 
   // POTENTIAL (Benchmark) - Green/Grey from image
   linePot: '#84cc16',    // Lime-500
