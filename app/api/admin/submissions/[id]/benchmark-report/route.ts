@@ -142,7 +142,9 @@ export async function GET(
         question_name: qDef?.question_text || qDef?.label || 'Unknown Question Name',
         achieved_score: qStats.achieved,
         benchmark_score: maxScore,
-        is_selected_benchmark: qStats.isSelected
+        is_selected_benchmark: qStats.isSelected,
+        alldata: qDef
+
       }
     })
 
