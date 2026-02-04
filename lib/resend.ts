@@ -35,8 +35,10 @@ export async function sendResendEmail(args: {
 
   if (!apiKey) {
     console.error('[v0] RESEND_API_KEY not configured')
-    return { success: false as const, error: 'Email service not configured' }
+    return { success: false as const, error: 'Email service not configured in .env' }
   }
+
+
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
