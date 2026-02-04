@@ -38,7 +38,7 @@ export function BenchmarkReportChart({ submissionId }: BenchmarkReportChartProps
           throw new Error('Failed to fetch benchmark data')
         }
         const result = await response.json()
-        console.log(result)
+        console.log("okk", result)
 
         // Transform data for chart
         const chartData = result.benchmark_data.map((item: BenchmarkData) => ({
@@ -206,8 +206,8 @@ export function BenchmarkReportChart({ submissionId }: BenchmarkReportChartProps
                   </td>
                   <td className="border border-gray-200 px-4 py-2 text-center text-xs font-semibold">
                     <span className={`px-2 py-1 rounded ${diff >= 0
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
                       }`}>
                       {status}
                     </span>
