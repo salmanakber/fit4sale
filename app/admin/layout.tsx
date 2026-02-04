@@ -15,10 +15,10 @@ import {
   Menu,
   X,
   User,
-  Settings,
+  Settings, // <--- Correct Icon Name
   Zap,
   TrendingUp,
-  SettingsIcon
+  // SettingsIcon <--- Removed invalid import
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -105,7 +105,8 @@ export default function AdminLayout({
   ]
 
   const settingsItems = [
-    { name: 'Einstellungen', href: '/admin/settings', icon: SettingsIcon },
+    // Updated icon to use 'Settings' instead of 'SettingsIcon'
+    { name: 'Einstellungen', href: '/admin/settings', icon: Settings }, 
   ]
 
   // Sidebar Content Component (Reused for Mobile and Desktop)
