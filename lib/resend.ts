@@ -1,15 +1,39 @@
+import { createClient } from '@supabase/supabase-js'
+
 export async function sendResendEmail(args: {
   to: string
   subject: string
   html: string
   from?: string
+  apiKey?: string
 }) {
   // const from = args.from || 'aschwanden@kmu-beratungen.ch'
   // Resend expects a verified sender. It's safest to use "Name <email@domain>" format.
   // See: https://resend.com/docs/send-with-nextjs
   const from = args.from || 'KMU-Beratungen <aschwanden@kmu-beratungen.ch>'
 
-  if (!process.env.RESEND_API_KEY) {
+  // Try to get API key from parameter, database, or environment variable
+  let apiKey = args.apiKey || process.env.RESEND_API_KEY
+
+  if (!apiKey) {
+    // Try to fetch from database if not provided
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+      )
+      const { data } = await supabase
+        .from('admin_settings')
+        .select('resend_api_key')
+        .single()
+
+      apiKey = data?.resend_api_key
+    } catch (error) {
+      console.error('[v0] Error fetching API key from database:', error)
+    }
+  }
+
+  if (!apiKey) {
     console.error('[v0] RESEND_API_KEY not configured')
     return { success: false as const, error: 'Email service not configured' }
   }
@@ -19,7 +43,7 @@ export async function sendResendEmail(args: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         from,

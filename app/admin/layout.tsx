@@ -16,7 +16,9 @@ import {
   X,
   User,
   Settings,
-  Target
+  Target,
+  TrendingUp,
+  Gear
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -99,6 +101,11 @@ export default function AdminLayout({
     { name: 'Eingaben', href: '/admin/submissions', icon: Inbox },
     { name: 'Auswertungen', href: '/admin/evaluations', icon: BarChart3 },
     { name: 'Benchmarks', href: '/admin/benchmarks', icon: Target },
+    { name: 'Reporting', href: '/admin/reporting', icon: TrendingUp },
+  ]
+  
+  const settingsItems = [
+    { name: 'Einstellungen', href: '/admin/settings', icon: Gear },
   ]
 
   // Sidebar Content Component (Reused for Mobile and Desktop)
@@ -148,23 +155,47 @@ export default function AdminLayout({
 
       {/* Footer Profile */}
       <div className="border-t border-white/5 bg-[#080c17] p-4">
-          <div className="flex items-center gap-3 mb-4 px-1">
-             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600/20 ring-1 ring-blue-500/50">
-                <User className="h-5 w-5 text-blue-400" />
-             </div>
-             <div className="overflow-hidden">
-                <p className="truncate text-sm font-medium text-white">Administrator</p>
-                <p className="truncate text-xs text-slate-500">Fit4Sale System</p>
-             </div>
+          <div className="mb-4 space-y-1 px-1">
+            {settingsItems.map((item) => {
+              const isActive = pathname === item.href
+              const Icon = item.icon
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    isActive 
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40" 
+                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-white")} />
+                  {item.name}
+                </Link>
+              )
+            })}
           </div>
-          <Button 
-            onClick={handleLogout} 
-            variant="ghost" 
-            className="w-full justify-start gap-2 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="text-sm">Abmelden</span>
-          </Button>
+          <div className="border-t border-white/5 pt-4">
+            <div className="flex items-center gap-3 mb-4 px-1">
+               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600/20 ring-1 ring-blue-500/50">
+                  <User className="h-5 w-5 text-blue-400" />
+               </div>
+               <div className="overflow-hidden">
+                  <p className="truncate text-sm font-medium text-white">Administrator</p>
+                  <p className="truncate text-xs text-slate-500">Fit4Sale System</p>
+               </div>
+            </div>
+            <Button 
+              onClick={handleLogout} 
+              variant="ghost" 
+              className="w-full justify-start gap-2 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="text-sm">Abmelden</span>
+            </Button>
+          </div>
       </div>
     </div>
   )

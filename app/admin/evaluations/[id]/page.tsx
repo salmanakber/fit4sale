@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { BenchmarkReportChart } from '@/components/benchmark-report-chart'
 import { 
   ArrowLeft, 
   Send, 
@@ -278,6 +279,11 @@ export default function EvaluationDetailPage() {
                     </p>
                 </div>
             )}
+
+            {/* Benchmark Report Chart */}
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <BenchmarkReportChart submissionId={evaluation.submission_id} />
+            </div>
 
             {/* Recommendations List */}
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

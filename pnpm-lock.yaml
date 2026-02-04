@@ -104,6 +104,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.0)
+      bcrypt:
+        specifier: ^6.0.0
+        version: 6.0.0
       bcryptjs:
         specifier: 3.0.3
         version: 3.0.3
@@ -155,6 +158,9 @@ importers:
       sonner:
         specifier: ^1.7.4
         version: 1.7.4(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      swr:
+        specifier: ^2.4.0
+        version: 2.4.0(react@19.2.0)
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
@@ -1282,6 +1288,10 @@ packages:
     resolution: {integrity: sha512-agD0MgJFUP/4nvjqzIB29zRPUuCF7Ge6mEv9s8dHrtYD7QWXRcx75rOADE/d5ah1NI+0vkDl0yorDd5U852IQQ==}
     hasBin: true
 
+  bcrypt@6.0.0:
+    resolution: {integrity: sha512-cU8v/EGSrnH+HnxV2z0J7/blxH8gq7Xh2JFT6Aroax7UohdmiJJlxApMxtKfuI7z68NvvVcmR78k2LbT6efhRg==}
+    engines: {node: '>= 18'}
+
   bcryptjs@3.0.3:
     resolution: {integrity: sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==}
     hasBin: true
@@ -1373,6 +1383,10 @@ packages:
 
   decimal.js-light@2.5.1:
     resolution: {integrity: sha512-qIMFpTMZmny+MMIitAB6D7iVPEorVw6YQRWkvarTkT4tBeSLLiHzcwj6q0MmYSFCiVpiqPJTJEYIrpcPzVEIvg==}
+
+  dequal@2.0.3:
+    resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
+    engines: {node: '>=6'}
 
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
@@ -1565,6 +1579,14 @@ packages:
       sass:
         optional: true
 
+  node-addon-api@8.5.0:
+    resolution: {integrity: sha512-/bRZty2mXUIFY/xU5HLvveNHlswNJej+RnxBjOMkidWfwZzgTbPG1E3K5TOxRLOR+5hX7bSofy8yf1hZevMS8A==}
+    engines: {node: ^18 || ^20 || >= 21}
+
+  node-gyp-build@4.8.4:
+    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
+    hasBin: true
+
   node-releases@2.0.27:
     resolution: {integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==}
 
@@ -1715,6 +1737,11 @@ packages:
         optional: true
       babel-plugin-macros:
         optional: true
+
+  swr@2.4.0:
+    resolution: {integrity: sha512-sUlC20T8EOt1pHmDiqueUWMmRRX03W7w5YxovWX7VR2KHEPCTMly85x05vpkP5i6Bu4h44ePSMD9Tc+G2MItFw==}
+    peerDependencies:
+      react: ^16.11.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   tailwind-merge@3.3.1:
     resolution: {integrity: sha512-gBXpgUm/3rp1lMZZrM/w7D8GKqshif0zAymAhbCyIt8KMe+0v9DQ7cdYLR4FHH/cKpdTXb+A/tKKU3eolfsI+g==}
@@ -2867,6 +2894,11 @@ snapshots:
 
   baseline-browser-mapping@2.9.17: {}
 
+  bcrypt@6.0.0:
+    dependencies:
+      node-addon-api: 8.5.0
+      node-gyp-build: 4.8.4
+
   bcryptjs@3.0.3: {}
 
   browserslist@4.28.1:
@@ -2948,6 +2980,8 @@ snapshots:
   date-fns@4.1.0: {}
 
   decimal.js-light@2.5.1: {}
+
+  dequal@2.0.3: {}
 
   detect-libc@2.1.2: {}
 
@@ -3096,6 +3130,10 @@ snapshots:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
+
+  node-addon-api@8.5.0: {}
+
+  node-gyp-build@4.8.4: {}
 
   node-releases@2.0.27: {}
 
@@ -3263,6 +3301,12 @@ snapshots:
     dependencies:
       client-only: 0.0.1
       react: 19.2.0
+
+  swr@2.4.0(react@19.2.0):
+    dependencies:
+      dequal: 2.0.3
+      react: 19.2.0
+      use-sync-external-store: 1.6.0(react@19.2.0)
 
   tailwind-merge@3.3.1: {}
 
