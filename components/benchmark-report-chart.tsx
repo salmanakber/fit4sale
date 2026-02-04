@@ -32,7 +32,7 @@ const THEME = {
   background: '#1e293b', // Slate-900 (Dark Background)
   grid: '#334155',       // Slate-700 (Subtle grid lines)
   text: '#cbd5e1',       // Slate-300 (Light text)
-  axis: '#94a3b8',       // Slate-400
+  axis: '#94a3b8',       // Slate-400 
 
   // IST (Your Result) - Red/Orange from image
   //okk
