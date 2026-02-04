@@ -9,7 +9,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'Fit4sale',
   description: 'Built by Salman akber',
-  generator: 'Hindara tech LTD',
+  generator: 'Hindara tech LTD.',
   icons: {
     icon: [
       {
