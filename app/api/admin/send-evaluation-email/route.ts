@@ -175,8 +175,7 @@ export async function POST(request: NextRequest) {
                 color: '#cbd5e1', 
                 fontFamily: '"Inter", sans-serif',
                 position: 'relative',
-              }}
-            >
+              }}>
               {/* Header */}
               <div style={{ position: 'absolute', top: 30, left: 30, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: 'white' }}>Verkaufsattraktivität Analyse</div>
