@@ -101,7 +101,7 @@ export default function AdminLayout({
     { name: 'Eingaben', href: '/admin/submissions', icon: Inbox },
     { name: 'Auswertungen', href: '/admin/evaluations', icon: BarChart3 },
     { name: 'Benchmarks', href: '/admin/benchmarks', icon: Zap },
-    { name: 'Reporting data', href: '/admin/reporting', icon: TrendingUp },
+    { name: 'Reporting', href: '/admin/reporting', icon: TrendingUp },
   ]
 
   const settingsItems = [
