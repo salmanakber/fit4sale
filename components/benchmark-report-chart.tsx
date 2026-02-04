@@ -35,6 +35,7 @@ const THEME = {
   axis: '#94a3b8',       // Slate-400
 
   // IST (Your Result) - Red/Orange from image
+  //okk
   lineIst: '#f97316',    // Orange-500
   dotIst: '#c2410c',     // Orange-700
 
