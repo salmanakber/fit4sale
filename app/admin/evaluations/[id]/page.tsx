@@ -12,14 +12,16 @@ import {
   User,
   Mail,
   Clock,
-  Activity,
-  Zap,
-  AlertTriangle,
-  FileText,
+  TrendingUp, // Sales icon
+  Briefcase,  // Business icon
+  AlertOctagon, // Risk icon
+  FileBadge,
   ShieldCheck,
   Loader2,
-  CalendarDays,
-  Target
+  Calendar,
+  BarChart3,
+  Target,
+  Lightbulb
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -27,10 +29,10 @@ import { cn } from '@/lib/utils'
 interface EvaluationDetail {
   id: string
   submission_id: string
-  fitness_level_score: number
-  readiness_score: number
-  recommended_program: string
-  safety_concerns: string
+  fitness_level_score: number // Mapped to: Sales Performance
+  readiness_score: number // Mapped to: Closing Potential
+  recommended_program: string // Mapped to: Strategy
+  safety_concerns: string // Mapped to: Blockers
   personalized_recommendations: string
   program_duration: string
   intensity_level: string
@@ -46,42 +48,41 @@ interface EvaluationDetail {
   }
 }
 
-// --- Sub-Components (Defined outside for performance) ---
+// --- Premium Components ---
 
-const ScoreCard = ({ score, label, icon: Icon, colorClass, subText }: { score: number; label: string, icon: any, colorClass: string, subText?: string }) => (
-  <div className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300">
-    <div className="flex items-start justify-between mb-4">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2 text-slate-500 mb-1">
-          <div className={cn("p-1.5 rounded-md bg-slate-50", colorClass.replace('bg-', 'text-'))}>
-            <Icon className="h-4 w-4" />
-          </div>
-          <span className="text-xs font-bold uppercase tracking-wider">{label}</span>
+const KpiCard = ({ value, label, subLabel, icon: Icon, trendColor }: { value: number, label: string, subLabel: string, icon: any, trendColor: string }) => (
+  <div className="relative overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-slate-200 transition-all hover:shadow-md">
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-4xl font-extrabold text-slate-900">{value}</span>
+          <span className="text-sm font-medium text-slate-400">/ 100</span>
         </div>
-        {subText && <p className="text-xs text-slate-400 pl-1">{subText}</p>}
+        <p className="mt-1 text-xs text-slate-400">{subLabel}</p>
       </div>
-      <div className="flex items-baseline gap-1">
-        <span className="text-4xl font-extrabold text-slate-900 tracking-tight">{score}</span>
-        <span className="text-sm font-medium text-slate-400">/100</span>
+      <div className={cn("rounded-lg p-3 bg-opacity-10", trendColor.replace('text-', 'bg-'))}>
+        <Icon className={cn("h-6 w-6", trendColor)} />
       </div>
     </div>
-    <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+    {/* Progress Bar styled as a target meter */}
+    <div className="mt-4 h-1.5 w-full rounded-full bg-slate-100">
       <div
-        className={cn("h-full rounded-full transition-all duration-1000 ease-out", colorClass)}
-        style={{ width: `${score}%` }}
-      ></div>
+        className={cn("h-full rounded-full transition-all duration-1000", trendColor.replace('text-', 'bg-'))}
+        style={{ width: `${value}%` }}
+      />
     </div>
   </div>
 )
 
-const DetailRow = ({ label, value, icon: Icon }: { label: string, value: string, icon: any }) => (
-  <div className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors">
-    <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white border border-slate-100 text-slate-500 shadow-sm">
-      <Icon className="h-4 w-4" />
+const StrategyItem = ({ label, value, icon: Icon }: { label: string, value: string, icon: any }) => (
+  <div className="flex items-start gap-3 p-4 rounded-lg bg-slate-50 border border-slate-100">
+    <div className="mt-1 text-slate-400">
+      <Icon className="h-5 w-5" />
     </div>
     <div>
-      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="font-medium text-slate-900 leading-snug mt-0.5">{value || '-'}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-sm font-semibold text-slate-900 mt-0.5">{value || 'Nicht definiert'}</p>
     </div>
   </div>
 )
@@ -132,16 +133,13 @@ export default function EvaluationDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ evaluationId }),
       })
-
-      if (response.ok) {
-        alert('Email sent successfully')
-      } else {
+      if (response.ok) alert('Report wurde erfolgreich gesendet.')
+      else {
         const err = await response.json().catch(() => null)
-        alert(err?.error || 'Failed to send email')
+        alert(err?.error || 'Fehler beim Senden')
       }
     } catch (error) {
-      console.error('[v0] Error sending email:', error)
-      alert('Error sending email')
+      alert('Fehler beim Senden')
     } finally {
       setIsSendingEmail(false)
     }
@@ -151,12 +149,9 @@ export default function EvaluationDetailPage() {
     if (!evaluation) return
     setIsApproving(true)
     try {
-      const res = await fetch(`/api/admin/submissions/${evaluation.submission_id}/approve`, {
-        method: 'POST',
-      })
+      const res = await fetch(`/api/admin/submissions/${evaluation.submission_id}/approve`, { method: 'POST' })
       if (!res.ok) {
-        const err = await res.json().catch(() => null)
-        alert(err?.error || 'Failed to approve')
+        alert('Fehler bei der Freigabe')
         return
       }
       const refreshed = await fetch(`/api/admin/evaluations/${evaluationId}`)
@@ -165,8 +160,7 @@ export default function EvaluationDetailPage() {
         setEvaluation(data.evaluation)
       }
     } catch (e) {
-      console.error('[v0] Error approving:', e)
-      alert('Error approving')
+      alert('Fehler bei der Freigabe')
     } finally {
       setIsApproving(false)
     }
@@ -175,8 +169,8 @@ export default function EvaluationDetailPage() {
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center flex-col gap-4 text-slate-500">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-900/50" />
-        <p className="text-sm font-medium animate-pulse">Bericht wird geladen...</p>
+        <Loader2 className="h-10 w-10 animate-spin text-slate-800" />
+        <p className="text-sm font-medium uppercase tracking-wide">Lade Analyse...</p>
       </div>
     )
   }
@@ -191,251 +185,231 @@ export default function EvaluationDetailPage() {
   const participantName = evaluation.quiz_submissions.patient_name
 
   return (
-    <div className="min-h-screen bg-slate-50/30 pb-20">
-      <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-6">
+    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
 
-        {/* Header Actions */}
-        <div className="flex flex-col gap-6 pt-8 pb-2 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-5">
-            <Link href="/admin/evaluations" className="group mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm border border-slate-200 transition-all hover:border-blue-200 hover:text-blue-600 hover:shadow-md">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                {participantName}
-              </h1>
-              <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                  <Activity className="h-3 w-3" /> Fitness Report
-                </span>
-                <span>•</span>
-                <span>ID: {evaluation.submission_id.slice(0, 8)}</span>
+      {/* --- Premium Header --- */}
+      <div className="bg-slate-900 text-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <Link href="/admin/evaluations" className="mt-1 p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+                    {participantName}
+                  </h1>
+                  {isApproved ? (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      Freigegeben
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      Ausstehend
+                    </span>
+                  )}
+                </div>
+                <p className="text-slate-400 text-sm mt-1 flex items-center gap-2">
+                  <Mail className="h-3 w-3" />
+                  {evaluation.quiz_submissions.patient_email || evaluation.quiz_submissions.participant_email || 'Keine Email'}
+                  <span className="text-slate-600">|</span>
+                  <Calendar className="h-3 w-3" />
+                  {new Date(evaluation.evaluation_completed_at).toLocaleDateString('de-DE')}
+                </p>
               </div>
             </div>
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={handleApprove}
+                disabled={isApproving || isApproved}
+                className={cn(
+                  "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white transition-colors border",
+                  isApproved && "border-emerald-900 bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/30"
+                )}
+              >
+                {isApproved ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                {isApproved ? "Status: OK" : "Bericht Freigeben"}
+              </Button>
+
+              <Button
+                onClick={handleSendEmail}
+                disabled={isSendingEmail || !isApproved}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-900/20 border-none"
+              >
+                {isSendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                An Kunden Senden
+              </Button>
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handleApprove}
-              disabled={isApproving || isApproved}
-              className={cn(
-                "h-10 border shadow-sm transition-all",
-                isApproved
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
-                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
-              )}
-            >
-              {isApproved ? (
-                <><CheckCircle2 className="mr-2 h-4 w-4" /> Freigegeben</>
-              ) : isApproving ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verarbeite...</>
-              ) : (
-                <><ShieldCheck className="mr-2 h-4 w-4" /> Freigeben</>
-              )}
-            </Button>
+      {/* --- Main Dashboard Content --- */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-8">
 
-            <Button
-              onClick={handleSendEmail}
-              disabled={isSendingEmail || !isApproved}
-              className={cn(
-                "h-10 shadow-md transition-all",
-                isApproved
-                  ? "bg-blue-900 hover:bg-blue-800 text-white shadow-blue-900/20"
-                  : "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed"
-              )}
-            >
-              {isSendingEmail ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sende...</>
-              ) : (
-                <><Send className="mr-2 h-4 w-4" /> Email Senden</>
-              )}
-            </Button>
+        {/* KPI Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <KpiCard
+            label="Vertriebs-Performance"
+            subLabel="Gesamtanalyse Status Quo"
+            value={evaluation.fitness_level_score}
+            icon={BarChart3}
+            trendColor="text-blue-600"
+          />
+          <KpiCard
+            label="Abschluss-Potenzial"
+            subLabel="Bereitschaft & Mindset"
+            value={evaluation.readiness_score}
+            icon={TrendingUp}
+            trendColor="text-emerald-500"
+          />
+
+          {/* Summary Card (Visual) */}
+          <div className="bg-slate-900 rounded-xl p-6 text-white shadow-lg flex flex-col justify-between border border-slate-700">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Empfohlene Strategie</p>
+              <h3 className="text-xl font-bold leading-tight text-white mb-1">
+                {evaluation.recommended_program}
+              </h3>
+              <p className="text-sm text-slate-400">{evaluation.program_duration}</p>
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-700 flex justify-between items-center">
+              <span className="text-xs text-slate-400">Intensität</span>
+              <span className="text-xs font-bold px-2 py-1 bg-blue-500/20 text-blue-300 rounded">
+                {evaluation.intensity_level}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* LEFT COLUMN: Main Report Content (8/12) */}
-          <div className="lg:col-span-8 space-y-8">
+          {/* LEFT: Detailed Report (2/3) */}
+          <div className="lg:col-span-2 space-y-8">
 
-            {/* Scores Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ScoreCard
-                score={evaluation.fitness_level_score}
-                label="Fitness Level"
-                subText="Gesamtbewertung"
-                icon={Target}
-                colorClass="bg-emerald-500"
-              />
-              <ScoreCard
-                score={evaluation.readiness_score}
-                label="Readiness"
-                subText="Trainingsbereitschaft"
-                icon={Zap}
-                colorClass="bg-indigo-500"
-              />
-            </div>
-
-            {/* Safety Concerns (High Priority) */}
-            {evaluation.safety_concerns && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-amber-100 p-2 text-amber-600">
-                    <AlertTriangle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wide text-amber-900">
-                      Wichtige Hinweise & Risiken
-                    </h3>
-                    <p className="mt-1 text-sm text-amber-800 leading-relaxed">
-                      {evaluation.safety_concerns}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Program Details Card */}
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-              <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
-                <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700">
-                  <FileText className="h-4 w-4 text-blue-600" /> Programm Übersicht
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
-                  <DetailRow label="Empfohlenes Programm" value={evaluation.recommended_program} icon={Activity} />
-                  <DetailRow label="Intensität" value={evaluation.intensity_level} icon={Zap} />
-                  <DetailRow label="Dauer / Frequenz" value={evaluation.program_duration} icon={Clock} />
-                  <DetailRow label="Besondere Modifikationen" value={evaluation.special_modifications} icon={FileText} />
-                </div>
-              </div>
-            </div>
-
-            {/* Benchmark Report Chart */}
+            {/* Benchmark Chart */}
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-6 flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700">
-                  <Activity className="h-4 w-4 text-blue-600" /> Benchmark Analyse
-                </h3>
-                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">Visualisierung</span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Benchmark Analyse</h3>
+                  <p className="text-sm text-slate-500">Vergleich zum Marktdurchschnitt</p>
+                </div>
+                <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                  <Target className="h-5 w-5" />
+                </div>
               </div>
               <BenchmarkReportChart submissionId={evaluation.submission_id} />
             </div>
 
-            {/* Recommendations List */}
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
-                <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Personalisierte Empfehlungen
+            {/* Strategy Grid */}
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700 flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" /> Strategische Planung
+                </h3>
+              </div>
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <StrategyItem label="Coaching Fokus" value={evaluation.recommended_program} icon={Target} />
+                <StrategyItem label="Laufzeit" value={evaluation.program_duration} icon={Clock} />
+                <StrategyItem label="Level" value={evaluation.intensity_level} icon={BarChart3} />
+                <StrategyItem label="Anmerkungen" value={evaluation.special_modifications} icon={FileBadge} />
+              </div>
+            </div>
+
+            {/* Recommendations */}
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700 flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4" /> Handlungsempfehlungen
                 </h3>
               </div>
               <div className="p-6">
                 {recommendationsList.length > 0 ? (
-                  <ul className="space-y-4">
+                  <div className="space-y-4">
                     {recommendationsList.map((rec, idx) => (
-                      <li key={idx} className="flex gap-4">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center text-xs font-bold mt-0.5 shadow-sm">
+                      <div key={idx} className="flex gap-4 items-start group">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold text-sm group-hover:bg-blue-600 group-hover:text-white transition-colors">
                           {idx + 1}
                         </div>
-                        <div className="text-sm text-slate-600 leading-relaxed pt-0.5">{rec.trim()}</div>
-                      </li>
+                        <p className="text-sm text-slate-600 leading-relaxed pt-1.5">{rec.trim()}</p>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 ) : (
-                  <p className="text-slate-400 italic text-sm">Keine spezifischen Empfehlungen vorhanden.</p>
+                  <p className="text-slate-400 italic">Keine Daten verfügbar.</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Sidebar (Sticky) (4/12) */}
-          <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-8">
+          {/* RIGHT: Risks & Meta (1/3) */}
+          <div className="lg:col-span-1 space-y-6">
 
-            {/* Participant Info */}
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-              <div className="bg-slate-50/50 px-6 py-4 border-b border-slate-100">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                  Teilnehmer
-                </h3>
-              </div>
-              <div className="p-6 space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
-                    <User className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-base font-bold text-slate-900">{evaluation.quiz_submissions.patient_name}</p>
-                    <p className="text-xs text-slate-500">Patient / Teilnehmer</p>
-                  </div>
+            {/* Risk Box - High Visibility */}
+            {evaluation.safety_concerns && (
+              <div className="rounded-xl border border-red-100 bg-white shadow-sm overflow-hidden">
+                <div className="bg-red-50/50 px-5 py-3 border-b border-red-100 flex items-center gap-2">
+                  <AlertOctagon className="h-4 w-4 text-red-600" />
+                  <h3 className="text-xs font-bold uppercase tracking-wide text-red-900">
+                    Wachstums-Blockaden
+                  </h3>
                 </div>
-
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <Mail className="h-4 w-4 text-slate-400" />
-                    <span className="truncate max-w-[200px]" title={evaluation.quiz_submissions.patient_email || ''}>
-                      {evaluation.quiz_submissions.patient_email || evaluation.quiz_submissions.participant_email || '-'}
-                    </span>
-                  </div>
+                <div className="p-5">
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    {evaluation.safety_concerns}
+                  </p>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Status Card */}
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-              <div className="bg-slate-50/50 px-6 py-4 border-b border-slate-100">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                  Status & Metadaten
-                </h3>
+            {/* CRM Data Card */}
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-4">
+                Kontakt Details
+              </h4>
+
+              <div className="flex items-center gap-4 mb-6">
+                <div className="h-12 w-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">
+                  <User className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900">{participantName}</p>
+                  <p className="text-xs text-slate-500">Lead / Interessent</p>
+                </div>
               </div>
-              <div className="p-6 space-y-5">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500">Aktueller Status</span>
-                  {isApproved ? (
-                    <span className="inline-flex items-center gap-1.5 text-emerald-700 font-medium bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-md text-xs">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Freigegeben
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 text-amber-700 font-medium bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-md text-xs">
-                      <Clock className="h-3.5 w-3.5" /> Ausstehend
-                    </span>
-                  )}
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Email Adresse</p>
+                  <p className="text-sm font-medium text-slate-900 truncate">
+                    {evaluation.quiz_submissions.patient_email || evaluation.quiz_submissions.participant_email || '-'}
+                  </p>
                 </div>
 
-                <div className="border-t border-slate-100 my-2"></div>
-
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 text-slate-400"><CalendarDays className="h-4 w-4" /></div>
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase font-semibold">Erstellt am</p>
-                    <p className="text-sm font-medium text-slate-900">
-                      {new Date(evaluation.evaluation_completed_at).toLocaleDateString('de-CH', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                      })}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {new Date(evaluation.evaluation_completed_at).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })} Uhr
-                    </p>
-                  </div>
+                <div className="pt-4 border-t border-slate-100">
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Erstellt am</p>
+                  <p className="text-sm font-medium text-slate-900">
+                    {new Date(evaluation.evaluation_completed_at).toLocaleDateString('de-DE')}
+                  </p>
                 </div>
 
                 {evaluation.quiz_submissions.approved_at && (
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-emerald-500"><ShieldCheck className="h-4 w-4" /></div>
-                    <div>
-                      <p className="text-xs text-slate-500 uppercase font-semibold">Freigabe am</p>
-                      <p className="text-sm font-medium text-slate-900">
-                        {new Date(evaluation.quiz_submissions.approved_at).toLocaleString('de-CH')}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase text-slate-400">Freigabe am</p>
+                    <p className="text-sm font-medium text-slate-900">
+                      {new Date(evaluation.quiz_submissions.approved_at).toLocaleDateString('de-DE')}
+                    </p>
                   </div>
                 )}
               </div>
             </div>
 
           </div>
+
         </div>
       </div>
     </div>
