@@ -16,6 +16,7 @@ export async function GET(
 
     const { id } = await params
 
+    // Initialize Supabase with SERVICE ROLE to bypass RLS policies
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -42,7 +43,7 @@ export async function GET(
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
     }
 
-    // 2. Fetch Stored Results (Source of Truth)
+    // 2. Fetch Stored Results
     const { data: storedResults, error: resError } = await supabase
       .from('question_benchmark_results')
       .select('*')
@@ -63,11 +64,9 @@ export async function GET(
     const relevantQuestionIds = new Set<string>()
 
     storedResults?.forEach((res: any) => {
-      // 1. Try to get ID from result row directly
       if (res.question_id) {
         relevantQuestionIds.add(String(res.question_id))
       }
-      // 2. Fallback: Try to find ID via benchmark_id
       else if (res.benchmark_id && allBenchmarks) {
         const bDef = allBenchmarks.find((b: any) => String(b.id) === String(res.benchmark_id))
         if (bDef?.question_id) {
@@ -76,26 +75,36 @@ export async function GET(
       }
     })
 
-    const idsToFetch = Array.from(relevantQuestionIds).filter(Boolean) // Remove any empty/null strings
+    const idsToFetch = Array.from(relevantQuestionIds).filter(Boolean)
 
-    // B. Fetch Question Names from 'quiz_questions'
+    // B. Fetch Question Names (SMART FALLBACK STRATEGY)
     let questionMap = new Map<string, any>()
 
     if (idsToFetch.length > 0) {
-      const { data: questionsData, error: qError } = await supabase
+
+      // Attempt 1: Try 'quiz_questions' table
+      const { data: quizQuestionsData } = await supabase
         .from('quiz_questions')
         .select('id, question_text, label')
         .in('id', idsToFetch)
 
-      if (qError) {
-        console.error("Error fetching questions:", qError)
+      if (quizQuestionsData) {
+        quizQuestionsData.forEach((q: any) => questionMap.set(String(q.id), q))
       }
 
-      if (questionsData) {
-        // Create map using String keys to prevent type mismatch issues
-        questionsData.forEach((q: any) => {
-          questionMap.set(String(q.id), q)
-        })
+      // Attempt 2: If we are missing names, try 'questions' table
+      // (This fixes the issue if the data is actually in the 'questions' table)
+      const missingIds = idsToFetch.filter(id => !questionMap.has(id))
+
+      if (missingIds.length > 0) {
+        const { data: standardQuestionsData } = await supabase
+          .from('questions')
+          .select('id, question_text, label')
+          .in('id', missingIds)
+
+        if (standardQuestionsData) {
+          standardQuestionsData.forEach((q: any) => questionMap.set(String(q.id), q))
+        }
       }
     }
 
@@ -109,13 +118,11 @@ export async function GET(
 
     // --- Report Construction ---
 
-    // D. Group Results by Question ID
     const processedResults: Record<string, { achieved: number, isSelected: boolean }> = {}
 
     storedResults?.forEach((res: any) => {
       let qId: string | null = res.question_id ? String(res.question_id) : null
 
-      // Resolve ID via benchmark if missing
       if (!qId && res.benchmark_id && allBenchmarks) {
         const bDef = allBenchmarks.find((b: any) => String(b.id) === String(res.benchmark_id))
         qId = bDef?.question_id ? String(bDef.question_id) : null
@@ -126,7 +133,6 @@ export async function GET(
           processedResults[qId] = { achieved: 0, isSelected: false }
         }
 
-        // Resolve Score
         let scoreVal = res.score
         if (scoreVal === undefined && res.benchmark_id && allBenchmarks) {
           const bDef = allBenchmarks.find((b: any) => String(b.id) === String(res.benchmark_id))
@@ -138,7 +144,6 @@ export async function GET(
       }
     })
 
-    // E. Map to Final Output Array
     const finalReport = Object.keys(processedResults).map((qId) => {
       const qStats = processedResults[qId]
       const qDef = questionMap.get(qId)
@@ -152,7 +157,7 @@ export async function GET(
         achieved_score: qStats.achieved,
         benchmark_score: maxScore,
         is_selected_benchmark: qStats.isSelected,
-        alldata: qDef || null
+        // Removed 'alldata' to clean up response, but kept name logic
       }
     })
 
@@ -160,11 +165,10 @@ export async function GET(
       submission_id: id,
       submission_name: submission.patient_name || submission.first_name,
       benchmark_data: finalReport,
-      // Debug info to help you solve the "Unknown" issue if it persists
       debug: {
-        ids_found_in_results: idsToFetch,
-        ids_found_in_quiz_questions_table: Array.from(questionMap.keys()),
-        match_count: questionMap.size
+        total_ids_searched: idsToFetch.length,
+        names_found: questionMap.size,
+        missing_names: idsToFetch.length - questionMap.size
       }
     })
 
