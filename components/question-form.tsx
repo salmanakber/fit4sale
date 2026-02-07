@@ -21,7 +21,6 @@ import { cn } from '@/lib/utils';
 interface Option {
   option_text: string;
   value: string;
-  score?: number;
 }
 
 interface QuestionFormProps {
@@ -34,7 +33,6 @@ interface QuestionFormProps {
     question_text: string;
     question_type: 'radio' | 'checkbox' | 'textarea';
     options: Option[];
-    category?: string;
   }) => Promise<void>;
   isLoading?: boolean;
   submitButtonText?: string;
@@ -52,29 +50,28 @@ export function QuestionForm({
   const [questionType, setQuestionType] = useState<'radio' | 'checkbox' | 'textarea'>(
     initialQuestion?.question_type || 'radio'
   );
-  const [category, setCategory] = useState<string>('general');
   const [options, setOptions] = useState<Option[]>(
     initialQuestion?.quiz_answer_options || [
-      { option_text: '', value: '', score: 0 },
-      { option_text: '', value: '', score: 0 },
+      { option_text: '', value: '' },
+      { option_text: '', value: '' },
     ]
   );
 
   const handleOptionChange = (
     index: number,
-    field: 'option_text' | 'value' | 'score',
-    value: string | number
+    field: 'option_text' | 'value',
+    value: string
   ) => {
     const newOptions = [...options];
     newOptions[index] = {
       ...newOptions[index],
-      [field]: field === 'score' ? Number(value) : value,
+      [field]: value,
     };
     setOptions(newOptions);
   };
 
   const handleAddOption = () => {
-    setOptions([...options, { option_text: '', value: '', score: 0 }]);
+    setOptions([...options, { option_text: '', value: '' }]);
   };
 
   const handleRemoveOption = (index: number) => {
@@ -98,11 +95,9 @@ export function QuestionForm({
       await onSubmit({
         question_text: questionText,
         question_type: questionType,
-        category,
         options: options.map((opt, idx) => ({
           option_text: opt.option_text,
           value: opt.value || `option_${idx}`,
-          score: opt.score || 0,
         })),
       });
     } catch (error) {
@@ -191,20 +186,6 @@ export function QuestionForm({
         </div>
       </div>
 
-      {/* SECTION 2.5: Category */}
-      <div className="space-y-3">
-        <Label htmlFor="category" className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          Kategorie
-        </Label>
-        <Input
-          id="category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          placeholder="z.B. Fitness, Ernährung, Gesundheit"
-          className="border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 transition-colors"
-        />
-      </div>
-
       {/* SECTION 3: Options Editor */}
       {questionType !== 'textarea' && (
         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -222,22 +203,13 @@ export function QuestionForm({
              {/* Header Row */}
              <div className="grid grid-cols-12 gap-4 border-b border-slate-200 bg-slate-100/50 px-4 py-3 text-xs font-semibold uppercase text-slate-500">
                 <div className="col-span-1 text-center">#</div>
-                <div className="col-span-5 md:col-span-5">Anzeigetext (Label)</div>
-                <div className="col-span-3 md:col-span-2 flex items-center gap-1">
+                <div className="col-span-6 md:col-span-7">Anzeigetext (Label)</div>
+                <div className="col-span-4 md:col-span-3 flex items-center gap-1">
                     Technischer Wert
                     <div className="group relative">
                         <HelpCircle className="h-3 w-3 cursor-help text-slate-400" />
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-800 p-2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                             Dieser Wert wird für das Scoring/Benchmark benutzt.
-                        </div>
-                    </div>
-                </div>
-                <div className="col-span-2 md:col-span-2 flex items-center gap-1">
-                    Punkte
-                    <div className="group relative">
-                        <HelpCircle className="h-3 w-3 cursor-help text-slate-400" />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-800 p-2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                            Punkte für diese Antwort (0-100).
                         </div>
                     </div>
                 </div>
@@ -255,7 +227,7 @@ export function QuestionForm({
                         </div>
 
                         {/* Text Input */}
-                        <div className="col-span-5 md:col-span-5">
+                        <div className="col-span-6 md:col-span-7">
                             <Input
                                 placeholder={`Option ${idx + 1}`}
                                 value={option.option_text}
@@ -265,25 +237,12 @@ export function QuestionForm({
                         </div>
 
                         {/* Value Input */}
-                        <div className="col-span-3 md:col-span-2">
+                        <div className="col-span-4 md:col-span-3">
                             <Input
                                 placeholder="Auto"
                                 value={option.value}
                                 onChange={(e) => handleOptionChange(idx, 'value', e.target.value)}
                                 className="border-transparent bg-transparent font-mono text-xs text-slate-600 hover:bg-white focus:bg-white focus:border-blue-500 px-2 h-9"
-                            />
-                        </div>
-
-                        {/* Score Input */}
-                        <div className="col-span-2 md:col-span-2">
-                            <Input
-                                type="number"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                value={option.score || 0}
-                                onChange={(e) => handleOptionChange(idx, 'score', e.target.value)}
-                                className="border-transparent bg-transparent hover:bg-white focus:bg-white focus:border-blue-500 px-2 h-9 text-center"
                             />
                         </div>
 
