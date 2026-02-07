@@ -1,266 +1,485 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { 
-  BarChart2, 
-  CheckCircle2, 
-  Clock, 
-  Plus, 
-  ArrowRight,
-  Loader2,
-  Activity,
-  Dumbbell
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { AlertCircle, Download, Filter, TrendingUp, Loader2, Activity } from 'lucide-react';
 
-interface Evaluation {
-  id: string
-  submission_id: string
-  patient_name: string
-  recommended_program: string
-  fitness_level_score: number
-  readiness_score: number
-  evaluation_completed_at: string | null
-  created_at: string
+interface QuestionResult {
+  questionId: string;
+  questionText: string;
+  category: string;
+  answerValue: string;
+  achievedScore: number;
+  benchmarkScore: number;
+  deviation: number;
 }
 
-export default function EvaluationsPage() {
-  const [evaluations, setEvaluations] = useState<Evaluation[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+interface CategoryResult {
+  category: string;
+  totalScore: number;
+  benchmarkScore: number;
+  percentage: number;
+  questionCount: number;
+}
+
+interface EvaluationResult {
+  submissionId: string;
+  participantName: string;
+  participantEmail: string;
+  submittedAt: string;
+  totalScore: number;
+  benchmarkScore: number;
+  deviation: number;
+  questionResults: QuestionResult[];
+  categoryResults: CategoryResult[];
+}
+
+interface CategoryScore {
+  name: string;
+  achieved: number;
+  benchmark: number;
+}
+
+export default function AuswertungenPage() {
+  const [evaluations, setEvaluations] = useState<EvaluationResult[]>([]);
+  const [filteredEvaluations, setFilteredEvaluations] = useState<EvaluationResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationResult | null>(null);
+  const [filterEmail, setFilterEmail] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchEvaluations = async () => {
-      try {
-        const response = await fetch('/api/admin/evaluations')
-        if (response.ok) {
-          const data = await response.json()
-          setEvaluations(data.evaluations || [])
-        }
-      } catch (error) {
-        console.error('[v0] Error fetching evaluations:', error)
-      } finally {
-        setIsLoading(false)
-      }
+    fetchEvaluations();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [evaluations, filterEmail]);
+
+  const fetchEvaluations = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/evaluations');
+      if (!response.ok) throw new Error('Failed to fetch evaluations');
+      const data = await response.json();
+      setEvaluations(data);
+      
+      // Extract unique categories
+      const uniqueCategories = new Set<string>();
+      data.forEach((eval: EvaluationResult) => {
+        eval.categoryResults.forEach((cat) => {
+          uniqueCategories.add(cat.category);
+        });
+      });
+      setCategories(Array.from(uniqueCategories));
+    } catch (error) {
+      console.error('Error fetching evaluations:', error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    fetchEvaluations()
-  }, [])
+  const applyFilters = () => {
+    let filtered = evaluations;
+    
+    if (filterEmail) {
+      filtered = filtered.filter((e) =>
+        e.participantEmail.toLowerCase().includes(filterEmail.toLowerCase())
+      );
+    }
+    
+    setFilteredEvaluations(filtered);
+  };
 
-  // --- Helpers ---
+  const calculateAverageMetrics = () => {
+    if (filteredEvaluations.length === 0) {
+      return { avgScore: 0, avgBenchmark: 0, avgDeviation: 0 };
+    }
+    
+    const totals = filteredEvaluations.reduce(
+      (acc, e) => ({
+        score: acc.score + e.totalScore,
+        benchmark: acc.benchmark + e.benchmarkScore,
+        deviation: acc.deviation + e.deviation,
+      }),
+      { score: 0, benchmark: 0, deviation: 0 }
+    );
+    
+    return {
+      avgScore: Math.round(totals.score / filteredEvaluations.length),
+      avgBenchmark: Math.round(totals.benchmark / filteredEvaluations.length),
+      avgDeviation: Math.round(totals.deviation / filteredEvaluations.length),
+    };
+  };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '-'
-    return new Date(dateString).toLocaleDateString('de-CH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+  const getCategoryAggregateData = (): CategoryScore[] => {
+    if (filteredEvaluations.length === 0) return [];
+    
+    const categoryMap = new Map<string, { achieved: number; benchmark: number; count: number }>();
+    
+    filteredEvaluations.forEach((eval) => {
+      eval.categoryResults.forEach((cat) => {
+        const existing = categoryMap.get(cat.category) || { achieved: 0, benchmark: 0, count: 0 };
+        categoryMap.set(cat.category, {
+          achieved: existing.achieved + cat.totalScore,
+          benchmark: existing.benchmark + cat.benchmarkScore,
+          count: existing.count + 1,
+        });
+      });
+    });
+    
+    return Array.from(categoryMap.entries()).map(([name, data]) => ({
+      name,
+      achieved: Math.round(data.achieved / data.count),
+      benchmark: Math.round(data.benchmark / data.count),
+    }));
+  };
 
-  const getInitials = (name: string) => {
-    if (!name) return '?'
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase()
-  }
+  const getRadarData = () => {
+    if (!selectedEvaluation) return [];
+    
+    return selectedEvaluation.categoryResults.map((cat) => ({
+      category: cat.category,
+      achieved: cat.totalScore,
+      benchmark: cat.benchmarkScore,
+      fullMark: Math.max(cat.totalScore, cat.benchmarkScore) + 10,
+    }));
+  };
 
-  // --- Components ---
+  const getTrendData = () => {
+    return filteredEvaluations
+      .sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime())
+      .map((e) => ({
+        name: new Date(e.submittedAt).toLocaleDateString('de-CH'),
+        achieved: e.totalScore,
+        benchmark: e.benchmarkScore,
+      }));
+  };
 
-  const ScoreBar = ({ value, colorClass, label }: { value: number, colorClass: string, label?: string }) => (
-    <div className="w-32">
-      <div className="mb-1.5 flex justify-between items-end">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</span>
-        <div className="flex items-baseline gap-0.5">
-            <span className="text-sm font-bold text-slate-700">{value ? value : 0}</span>
-            <span className="text-[10px] text-slate-400">/100</span>
+  const metrics = calculateAverageMetrics();
+  const categoryData = getCategoryAggregateData();
+  const radarData = getRadarData();
+  const trendData = getTrendData();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 border-4 border-blue-900 border-t-blue-400 rounded-full mx-auto mb-4 animate-spin" />
+          <p className="text-slate-600">Laden der Auswertungen...</p>
         </div>
       </div>
-      <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-        <div 
-          className={cn("h-full rounded-full transition-all duration-1000 ease-out", colorClass)} 
-          style={{ width: `${value || 0}%` }}
-        ></div>
-      </div>
-    </div>
-  )
-
-  // --- Loading State ---
-  if (isLoading) {
-    return (
-      <div className="flex h-[60vh] flex-col items-center justify-center gap-3">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-        <p className="text-sm font-medium text-slate-500">Auswertungen werden geladen...</p>
-      </div>
-    )
+    );
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
-      
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Activity className="h-6 w-6 text-blue-700" />
+    <div className="min-h-screen bg-slate-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-2">
+            <Activity className="h-8 w-8 text-blue-700" />
             Auswertungen
-          </h2>
-          <p className="text-sm text-slate-500">
-            Übersicht aller generierten Fitness-Analysen und Programm-Empfehlungen.
-          </p>
+          </h1>
+          <p className="text-slate-600">Detaillierte Analyse der Umfrageergebnisse und Vergleiche mit Benchmarks</p>
         </div>
-        
-        <Button 
-            asChild
-            className="bg-blue-900 text-white hover:bg-blue-800 shadow-md shadow-blue-900/10 transition-all hover:-translate-y-0.5"
-        >
-            <Link href="/admin/submissions">
-                <Plus className="mr-2 h-4 w-4" />
-                Neue Auswertung
-            </Link>
-        </Button>
-      </div>
 
-      {/* Main Table Card */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full whitespace-nowrap text-left text-sm">
-            <thead className="bg-slate-50/75 text-slate-500">
-              <tr className="border-b border-slate-100">
-                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs">Teilnehmer/in</th>
-                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs">Empfohlenes Programm</th>
-                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs">Fitness Score</th>
-                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs">Readiness Score</th>
-                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs">Status</th>
-                <th className="px-6 py-4 font-semibold uppercase tracking-wider text-xs">Erstellt am</th>
-                <th className="px-6 py-4 text-right font-semibold uppercase tracking-wider text-xs">Aktion</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {evaluations.length > 0 ? (
-                evaluations.map((evaluation) => (
-                  <tr 
-                    key={evaluation.id} 
-                    className="group transition-colors hover:bg-slate-50/60"
-                  >
-                    {/* Participant */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600 ring-2 ring-white shadow-sm">
-                            {getInitials(evaluation.patient_name)}
-                        </div>
-                        <span className="font-medium text-slate-900">
-                          {evaluation.patient_name}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Program */}
-                    <td className="px-6 py-4">
-                      {evaluation.recommended_program ? (
-                         <div className="flex items-center gap-2">
-                             <div className="rounded-md bg-blue-50 p-1 text-blue-600">
-                                 <Dumbbell className="h-3.5 w-3.5" />
-                             </div>
-                             <span className="font-medium text-slate-700">
-                                {evaluation.recommended_program}
-                             </span>
-                         </div>
-                      ) : (
-                        <span className="text-slate-400 italic text-xs">Ausstehend</span>
-                      )}
-                    </td>
-
-                    {/* Fitness Score */}
-                    <td className="px-6 py-4">
-                        <ScoreBar 
-                            value={evaluation.fitness_level_score} 
-                            colorClass="bg-emerald-500" 
-                            label="Fitness"
-                        />
-                    </td>
-
-                    {/* Readiness Score */}
-                    <td className="px-6 py-4">
-                        <ScoreBar 
-                            value={evaluation.readiness_score} 
-                            colorClass="bg-indigo-500" 
-                            label="Readiness"
-                        />
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-6 py-4">
-                        {evaluation.evaluation_completed_at ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                                <CheckCircle2 className="h-3 w-3" />
-                                Fertiggestellt
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                                <Clock className="h-3 w-3" />
-                                In Bearbeitung
-                            </span>
-                        )}
-                    </td>
-
-                    {/* Date */}
-                    <td className="px-6 py-4 text-slate-500">
-                      {formatDate(evaluation.evaluation_completed_at || evaluation.created_at)}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-6 py-4 text-right">
-                      <Button 
-                        asChild 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Link href={`/admin/evaluations/${evaluation.id}`}>
-                            Details
-                            <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                        </Link>
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                /* Empty State */
-                <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                        <div className="mb-4 rounded-full bg-slate-50 p-4 ring-1 ring-slate-100">
-                            <BarChart2 className="h-8 w-8 text-slate-300" />
-                        </div>
-                        <h3 className="mb-1 text-base font-semibold text-slate-900">Keine Auswertungen vorhanden</h3>
-                        <p className="text-sm text-slate-500 mb-4">
-                            Erstellen Sie die erste Auswertung über das Eingaben-Menü.
-                        </p>
-                        <Button asChild variant="outline" size="sm">
-                             <Link href="/admin/submissions">Zu den Eingaben</Link>
-                        </Button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Footer */}
-        {evaluations.length > 0 && (
-            <div className="border-t border-slate-100 bg-slate-50/50 px-6 py-4">
-                <p className="text-xs font-medium text-slate-500">
-                    Gesamt: {evaluations.length} Reports
-                </p>
+        {/* Filters */}
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filter
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email-filter">E-Mail filtern</Label>
+                <Input
+                  id="email-filter"
+                  placeholder="E-Mail-Adresse eingeben..."
+                  value={filterEmail}
+                  onChange={(e) => setFilterEmail(e.target.value)}
+                  className="border-slate-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Gefilterte Ergebnisse: {filteredEvaluations.length}</Label>
+                <Button
+                  onClick={fetchEvaluations}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Aktualisieren
+                </Button>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Summary Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-blue-900">Durchschn. Erreichte Punkte</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-900">{metrics.avgScore}</div>
+              <p className="text-xs text-blue-700 mt-1">über {filteredEvaluations.length} Auswertungen</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-green-900">Durchschn. Benchmark</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-900">{metrics.avgBenchmark}</div>
+              <p className="text-xs text-green-700 mt-1">Best in Class Standard</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-amber-900">Durchschn. Abweichung</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-3xl font-bold ${metrics.avgDeviation > 0 ? 'text-red-900' : 'text-green-900'}`}>
+                {metrics.avgDeviation > 0 ? '-' : '+'}{Math.abs(metrics.avgDeviation)}
+              </div>
+              <p className="text-xs text-amber-700 mt-1">{metrics.avgDeviation > 0 ? 'unter' : 'über'} Benchmark</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Category Breakdown - Bar Chart */}
+        {categoryData.length > 0 && (
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle>Kategorien-Übersicht</CardTitle>
+              <CardDescription>Vergleich der durchschnittlichen Werte pro Kategorie</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={categoryData} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                  <YAxis />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#fff',
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="achieved" fill="#3b82f6" name="Erreichte Punkte" />
+                  <Bar dataKey="benchmark" fill="#10b981" name="Benchmark" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         )}
+
+        {/* Score Breakdown by Question - When Individual Selected */}
+        {selectedEvaluation && (
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle>Detaillierte Ergebnisse</CardTitle>
+              <CardDescription>{selectedEvaluation.participantName} ({selectedEvaluation.participantEmail})</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Score Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-blue-700 font-medium">Gesamt Erreicht</p>
+                  <p className="text-2xl font-bold text-blue-900">{selectedEvaluation.totalScore}</p>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <p className="text-sm text-green-700 font-medium">Benchmark</p>
+                  <p className="text-2xl font-bold text-green-900">{selectedEvaluation.benchmarkScore}</p>
+                </div>
+                <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                  <p className="text-sm text-amber-700 font-medium">Abweichung</p>
+                  <p className={`text-2xl font-bold ${selectedEvaluation.deviation > 0 ? 'text-red-900' : 'text-green-900'}`}>
+                    {selectedEvaluation.deviation > 0 ? '-' : '+'}{Math.abs(selectedEvaluation.deviation)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Questions Breakdown */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-slate-900">Pro Frage</h4>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {selectedEvaluation.questionResults.map((q, idx) => (
+                    <div key={idx} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <p className="font-medium text-slate-900 text-sm">{q.questionText}</p>
+                          <p className="text-xs text-slate-500 mt-1">Antwort: {q.answerValue}</p>
+                          <span className="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                            {q.category}
+                          </span>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="text-sm font-bold text-slate-900">{q.achievedScore} / {q.benchmarkScore}</p>
+                          <p className={`text-xs ${q.deviation > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {q.deviation > 0 ? '-' : '+'}{Math.abs(q.deviation)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${Math.min((q.achievedScore / q.benchmarkScore) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Radar Chart - Multidimensional Comparison */}
+        {radarData.length > 0 && (
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle>Mehrdimensionaler Vergleich (Radar)</CardTitle>
+              <CardDescription>Visualisierung der Leistung nach Kategorie</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="#e2e8f0" />
+                  <PolarAngleAxis dataKey="category" tick={{ fontSize: 12 }} />
+                  <PolarRadiusAxis angle={90} domain={[0, 'dataMax + 20']} />
+                  <Radar name="Erreicht" dataKey="achieved" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.5} />
+                  <Radar name="Benchmark" dataKey="benchmark" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
+                  <Legend />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#fff',
+                    }}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Trend Chart - Score Development Over Time */}
+        {trendData.length > 1 && (
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Entwicklungstrend
+              </CardTitle>
+              <CardDescription>Zeitliche Entwicklung der Ergebnisse</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={trendData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#fff',
+                    }}
+                  />
+                  <Legend />
+                  <Line type="monotone" dataKey="achieved" stroke="#3b82f6" name="Erreichte Punkte" strokeWidth={2} />
+                  <Line type="monotone" dataKey="benchmark" stroke="#10b981" name="Benchmark" strokeWidth={2} strokeDasharray="5 5" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Results List */}
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle>Alle Auswertungen</CardTitle>
+            <CardDescription>{filteredEvaluations.length} Ergebnis(se) gefunden</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredEvaluations.length === 0 ? (
+              <div className="flex items-center justify-center py-8 text-slate-500">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                Keine Auswertungen gefunden
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {filteredEvaluations.map((eval) => (
+                  <div
+                    key={eval.submissionId}
+                    onClick={() => setSelectedEvaluation(eval)}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedEvaluation?.submissionId === eval.submissionId
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-slate-200 bg-white hover:border-blue-400'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900">{eval.participantName}</p>
+                        <p className="text-sm text-slate-500">{eval.participantEmail}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {new Date(eval.submittedAt).toLocaleDateString('de-CH', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-blue-900">{eval.totalScore}</p>
+                        <p className="text-xs text-slate-500">/ {eval.benchmarkScore}</p>
+                        <p className={`text-sm font-semibold mt-1 ${eval.deviation > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {eval.deviation > 0 ? '-' : '+'}{Math.abs(eval.deviation)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
-  )
+  );
 }
