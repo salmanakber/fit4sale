@@ -37,9 +37,10 @@ export async function GET() {
         id,
         question_text,
         question_type,
+        category,
         order_index,
         created_at,
-        quiz_answer_options(id, option_text, option_value, order_index)
+        quiz_answer_options(id, option_text, option_value, score, order_index)
       `
       )
       .order('order_index', { ascending: true });
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    const { question_text, question_type, options } = await request.json();
+    const { question_text, question_type, options, category } = await request.json();
 
     // Get max order_index
     const { data: maxOrder } = await supabase
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
       .insert({
         question_text,
         question_type,
+        category: category || 'general',
         order_index: nextOrder,
       })
       .select()
@@ -109,12 +111,13 @@ export async function POST(request: NextRequest) {
 
     if (questionError) throw questionError;
 
-    // Insert answer options
+    // Insert answer options with scores
     if (options && options.length > 0) {
       const optionsData = options.map((opt: any, idx: number) => ({
         question_id: question.id,
         option_text: opt.option_text,
         option_value: opt.value || `option_${idx}`,
+        score: opt.score || 0,
         order_index: idx,
       }));
 

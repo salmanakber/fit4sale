@@ -41,9 +41,10 @@ export async function GET(
         id,
         question_text,
         question_type,
+        category,
         order_index,
         created_at,
-        quiz_answer_options(id, option_text, option_value, order_index)
+        quiz_answer_options(id, option_text, option_value, score, order_index)
       `
       )
       .eq('id', id)
@@ -51,12 +52,13 @@ export async function GET(
 
     if (error) throw error;
 
-    // Backward-compatible shape for existing UI (expects option "value")
+    // Backward-compatible shape for existing UI (expects option "value" and "score")
     const normalized = {
       ...question,
       quiz_answer_options: (question as any).quiz_answer_options?.map((opt: any) => ({
         ...opt,
         value: opt.option_value,
+        score: opt.score || 0,
       })),
     }
 
@@ -100,7 +102,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { question_text, question_type, options } = await request.json();
+    const { question_text, question_type, options, category } = await request.json();
 
     // Update question
     const { data: question, error: questionError } = await supabase
@@ -108,6 +110,7 @@ export async function PUT(
       .update({
         question_text,
         question_type,
+        category: category || 'general',
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
@@ -119,12 +122,13 @@ export async function PUT(
     // Delete existing options
     await supabase.from('quiz_answer_options').delete().eq('question_id', id);
 
-    // Insert new options
+    // Insert new options with scores
     if (options && options.length > 0) {
       const optionsData = options.map((opt: any, idx: number) => ({
         question_id: id,
         option_text: opt.option_text,
         option_value: opt.value || `option_${idx}`,
+        score: opt.score || 0,
         order_index: idx,
       }));
 
